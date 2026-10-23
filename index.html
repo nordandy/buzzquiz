@@ -280,9 +280,9 @@ function host(){
     H.phase = 'end'; save(); send(); render();
   }
 
-  function reset(ask){
+  async function reset(ask){
     if (ask && !confirm('Avsluta spelet? Alla spelare tappar rummet.')) return;
-    clearInterval(timer); sb.removeAllChannels(); out = inn = null;
+    clearInterval(timer); out = inn = null; await sb.removeAllChannels();
     H = { phase:'setup', text:H.text, secs:H.secs, mode:H.mode }; save(); setStatus(true); render();
   }
 
@@ -440,9 +440,11 @@ function player(){
     } catch(e) { if (retry) setTimeout(() => sendIn(event, payload, 0), 800); }
   }
 
-  function join(){
+  // Vänta in rensningen: removeAllChannels stänger anslutningen när den är klar,
+  // och utan await stängde den den nya anslutningen vi just öppnat.
+  async function join(){
     keepAwake();
-    sb.removeAllChannels();
+    if (sb.getChannels().length) await sb.removeAllChannels();
     inn = sb.channel('q-' + code + '-in');
     sb.channel('q-' + code + '-out')
       .on('broadcast', { event:'state' }, ({payload}) => {
