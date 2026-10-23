@@ -210,8 +210,11 @@ function host(){
   let H = ls.get('quiz-host') || { phase:'setup', text:TEST, secs:20, mode:'test' };
   if (!H.mode) H.mode = 'test';
   // ?host=test / ?host=live laddar DDG-quizet med sin rumskod
+  // ?host=test / ?host=live går alltid till sitt eget rum (0010 / 2026) med DDG-quizet.
+  // Pågår redan ett spel i just det rummet fortsätter det; annars startas ett nytt.
   const pre = Q.get('host');
-  if (PRESET[pre] && H.phase === 'setup') Object.assign(H, { text:DDG, mode:pre, room:PRESET[pre], secs:30 });
+  const usePreset = PRESET[pre] && !(H.code === PRESET[pre] && H.phase !== 'setup');
+  if (usePreset) H = { phase:'setup', text:DDG, mode:pre, room:PRESET[pre], secs:30 };
   let out, inn, timer, rebT;
   const save = () => ls.set('quiz-host', H);
   const ids = () => Object.keys(H.players || {});
@@ -296,13 +299,13 @@ function host(){
     return { qs, errs };
   }
 
-  function create(){
+  function create(roomArg){
     const { qs, errs } = parse(H.text);
-    const room = ($('#rc').value || '').replace(/\D/g, '');
+    const room = String(roomArg || $('#rc').value || '').replace(/\D/g, '');
     if (!/^\d{4}$/.test(room) || room === '0000') errs.push('Rumskoden ska vara fyra siffror.');
     else if (H.mode === 'test' && !isTest(room)) errs.push('Testrum har kod 0001–0099.');
     else if (H.mode === 'live' && isTest(room)) errs.push('0001–0099 är testrum. Välj 0100 eller högre.');
-    if (errs.length) { $('#e').textContent = errs.join(' '); return; }
+    if (errs.length) { render(); $('#e').textContent = errs.join(' '); return; }
     ls.set('quiz-last-' + H.mode, Number(room));
     // gid skiljer omgångar åt när samma kod används igen
     Object.assign(H, { qs, code:room, gid:Math.random().toString(36).slice(2,8), players:{}, ans:{}, phase:'lobby', qi:0 });
@@ -383,7 +386,7 @@ function host(){
         if (H.mode === 'test' && [TEST, EXAMPLE, ''].includes(H.text.trim())) H.text = TEST;
         save(); render();
       });
-      $('#go').onclick = create;
+      $('#go').onclick = () => create();
     }
     else if (H.phase === 'lobby') {
       const link = base + '?r=' + H.code, n = ids().length;
@@ -458,6 +461,7 @@ function host(){
 
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && H.phase !== 'setup') send(true); });
   keepAwake();
+  if (usePreset) return create(H.room);
   if (H.phase !== 'setup') { connect(); if (H.phase === 'question') tick(); }
   render();
 }
@@ -598,7 +602,7 @@ function player(){
       app.innerHTML = `${head(roomLbl)}
         <div class="hero"><span class="k">Du</span>${face(me.av, 'xl')}</div>
         <div class="band"><span class="k">Inne</span><span class="q">${esc(me.name)}</span><p style="color:var(--band-soft)">Quizet startar snart.</p></div>
-        <div class="grid"><button class="cell slim" id="ch"><span class="k">Byt namn/robot</span></button><button class="cell slim" id="snd" aria-pressed="${me.snd !== false}"><span class="k">Ljud ${me.snd === false ? 'av' : 'på'}</span></button></div>`;
+        <div class="grid"><button class="cell slim" id="ch"><span class="k">Byt namn/robot</span></button><button class="cell slim" id="snd" aria-label="Ljud av eller på"><span class="k">Ljud: ${me.snd === false ? 'av' : 'på'}</span></button></div>`;
       $('#ch').onclick = form;
       $('#snd').onclick = () => { me.snd = me.snd === false; ls.set('quiz-me', me); unlock(); render(); };
     }
