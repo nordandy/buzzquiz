@@ -100,7 +100,7 @@ function host(){
 
   function connect(){
     out = sb.channel('q-' + H.code + '-out');
-    out.subscribe(s => { setStatus(s === 'SUBSCRIBED'); if (s === 'SUBSCRIBED' && H.phase !== 'setup') send(); });
+    out.subscribe(s => { setStatus(s === 'SUBSCRIBED'); if (s === 'SUBSCRIBED' && H.phase !== 'setup') send(true); });
     inn = sb.channel('q-' + H.code + '-in', { config:{ broadcast:{ self:false } } });
     inn.on('broadcast', { event:'join' }, ({payload}) => onJoin(payload))
        .on('broadcast', { event:'answer' }, ({payload}) => onAnswer(payload))
@@ -115,8 +115,9 @@ function host(){
     if (H.phase === 'end') return { ph:'end', res:H.res, n:ids().length, top:ranked().slice(0,5).map(id => [H.players[id].av, H.players[id].name, H.players[id].score]) };
     return { ph:'lobby' };
   }
-  function send(){ if (out) out.send({ type:'broadcast', event:'state', payload:msg() }); }
-  function reb(){ if (rebT) return; rebT = setTimeout(() => { rebT = null; send(); }, 1500); }
+  // re: host was away and may have missed answers, so players re-send theirs
+  function send(re){ if (out) out.send({ type:'broadcast', event:'state', payload:{ ...msg(), ...(re ? { re:1 } : {}) } }); }
+  function reb(){ if (rebT) return; rebT = setTimeout(() => { rebT = null; send(); }, 3000); }
 
   function onJoin(p){
     if (!p || !p.id || H.phase === 'setup') return;
@@ -258,7 +259,7 @@ function host(){
     }
   }
 
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && H.phase !== 'setup') send(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && H.phase !== 'setup') send(true); });
   keepAwake();
   if (H.phase !== 'setup') { connect(); if (H.phase === 'question') tick(); }
   render();
@@ -321,7 +322,7 @@ function player(){
       .on('broadcast', { event:'state' }, ({payload}) => {
         cur = payload; render();
         const mine = ls.get(ak + '-c');
-        if (cur.ph === 'q' && answered === cur.qi && mine != null) sendIn('answer', { id:me.id, qi:cur.qi, c:mine });
+        if (cur.ph === 'q' && cur.re && answered === cur.qi && mine != null) sendIn('answer', { id:me.id, qi:cur.qi, c:mine });
       })
       .subscribe(s => {
         setStatus(s === 'SUBSCRIBED');
