@@ -33,6 +33,7 @@ body{background:var(--bg);color:var(--ink);font:400 16px/1.4 var(--sans);padding
 .band{background:var(--band);color:var(--band-ink);padding:18px var(--pad) 20px;display:flex;flex-direction:column;gap:10px}
 .band .k{color:var(--band-soft)}
 .band p{font-size:17px;line-height:1.45}
+.band .ex{font-size:16px;line-height:1.45;color:#C9C9C4;max-width:60ch}
 .band .link{font:400 13px/1.4 var(--mono);color:var(--band-soft);word-break:break-all}
 .q{font-weight:500;font-size:clamp(24px,6.6vw,30px);line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
 .digits{font:400 clamp(60px,19vw,92px)/1 var(--mono);letter-spacing:.04em}
@@ -162,11 +163,11 @@ const rows = list => `<div class="rows">${list.map(([av, name, score], i) => `<d
 const EXAMPLE = 'Vad heter Sveriges huvudstad?\n*Stockholm\nGöteborg\nMalmö\nUppsala\n\nHur många sidor har en oktagon?\n6\n*8\n10\n12';
 // Testquiz om Stockholm, laddas i testläge.
 const TEST = [
-  'På hur många öar ligger Stockholm?\n7\n*14\n21\n30',
-  'Vilket år invigdes Stockholms tunnelbana?\n1933\n*1950\n1964\n1975',
-  'Vad heter regalskeppet som sjönk i Stockholm 1628?\n*Vasa\nKronan\nSvärdet\nMars',
-  'I vilken sal i Stadshuset hålls Nobelbanketten?\n*Blå hallen\nGyllene salen\nRådssalen\nPrinsens galleri',
-  'Vem ritade Stockholms stadsbibliotek?\nRagnar Östberg\n*Gunnar Asplund\nSigurd Lewerentz\nSven Markelius'
+  'På hur många öar ligger Stockholm?\n7\n*14\n21\n30\n> Innerstaden är byggd på 14 öar som binds ihop av broar.',
+  'Vilket år invigdes Stockholms tunnelbana?\n1933\n*1950\n1964\n1975\n> Första sträckan, Slussen–Hökarängen, öppnade 1 oktober 1950. 1933 kom en spårvägstunnel under Södermalm som senare blev tunnelbana.',
+  'Vad heter regalskeppet som sjönk i Stockholm 1628?\n*Vasa\nKronan\nSvärdet\nMars\n> Vasa kantrade på sin första resa, bärgades 1961 och står i dag på Vasamuseet.',
+  'I vilken sal i Stadshuset hålls Nobelbanketten?\n*Blå hallen\nGyllene salen\nRådssalen\nPrinsens galleri\n> Middagen äts i Blå hallen. Dansen efteråt är i Gyllene salen.',
+  'Vem ritade Stockholms stadsbibliotek?\nRagnar Östberg\n*Gunnar Asplund\nSigurd Lewerentz\nSven Markelius\n> Asplunds bibliotek öppnade 1928. Ragnar Östberg ritade Stadshuset.'
 ].join('\n\n');
 // Rumskoder: 0001–0099 är testrum, 0100–9999 riktiga spel.
 const isTest = code => Number(code) < 100;
@@ -221,7 +222,7 @@ function host(){
     const q = H.qs && H.qs[H.qi];
     if (H.phase === 'lobby') return { ph:'lobby' };
     if (H.phase === 'question') return { ph:'q', qi:H.qi, n:H.qs.length, q:q.q, opts:q.opts, secs:H.secs, left:Math.max(0, H.qStart + H.secs*1000 - Date.now()) };
-    if (H.phase === 'reveal') return { ph:'r', qi:H.qi, n:H.qs.length, correct:q.correct, ans:q.opts[q.correct], res:H.res };
+    if (H.phase === 'reveal') return { ph:'r', qi:H.qi, n:H.qs.length, correct:q.correct, ans:q.opts[q.correct], ex:q.ex || '', res:H.res };
     if (H.phase === 'end') return { ph:'end', res:H.res, n:ids().length, top:ranked().slice(0,5).map(id => [H.players[id].av, H.players[id].name, H.players[id].score]) };
     return { ph:'lobby' };
   }
@@ -252,12 +253,15 @@ function host(){
   function parse(text){
     const qs = [], errs = [];
     text.split(/\n\s*\n/).map(b => b.split('\n').map(l => l.trim()).filter(Boolean)).filter(b => b.length).forEach((b,i) => {
-      const opts = b.slice(1).map(o => o.replace(/^\*\s*/, ''));
-      const correct = b.slice(1).findIndex(o => o.startsWith('*'));
-      const stars = b.slice(1).filter(o => o.startsWith('*')).length;
+      // Rader som börjar med > är förklaringen som visas med facit
+      const ex = b.slice(1).filter(o => o.startsWith('>')).map(o => o.replace(/^>\s*/, '')).join(' ').slice(0, 280);
+      const lines = b.slice(1).filter(o => !o.startsWith('>'));
+      const opts = lines.map(o => o.replace(/^\*\s*/, ''));
+      const correct = lines.findIndex(o => o.startsWith('*'));
+      const stars = lines.filter(o => o.startsWith('*')).length;
       if (opts.length < 2 || opts.length > 4) errs.push('Fråga ' + (i+1) + ' behöver 2–4 svar.');
       else if (stars !== 1) errs.push('Fråga ' + (i+1) + ' behöver exakt ett svar markerat med *.');
-      else qs.push({ q:b[0], opts, correct });
+      else qs.push({ q:b[0], opts, correct, ex });
     });
     if (!qs.length && !errs.length) errs.push('Skriv minst en fråga.');
     return { qs, errs };
@@ -320,7 +324,7 @@ function host(){
     const q = H.qs && H.qs[H.qi], ranks = n => ranked().slice(0,n).map(id => [H.players[id].av, H.players[id].name, H.players[id].score]);
     if (H.phase === 'setup') {
       app.innerHTML = `${head('värd')}${mark('opt')}
-        <div class="band"><span class="k">Nytt quiz</span><p>En fråga per stycke. Första raden är frågan, sedan 2–4 svar. Markera rätt svar med *.</p></div>
+        <div class="band"><span class="k">Nytt quiz</span><p>En fråga per stycke. Första raden är frågan, sedan 2–4 svar. Markera rätt svar med *. En rad som börjar med &gt; blir förklaring.</p></div>
         <textarea id="t" spellcheck="false" aria-label="Frågor"></textarea>
         <div class="grid g3">
           <button class="cell" data-m="test" aria-pressed="${H.mode === 'test'}"><span class="k">01–99</span><span class="v">Test</span></button>
@@ -374,7 +378,7 @@ function host(){
       const counts = q.opts.map((_,i) => Object.values(H.ans).filter(a => a.c === i).length);
       const last = H.qi + 1 >= H.qs.length;
       app.innerHTML = `${head('facit ' + pad(H.qi+1) + '/' + pad(H.qs.length))}
-        <div class="band"><span class="k">Rätt svar: ${L[q.correct]}</span><span class="q">${esc(q.q)}</span></div>
+        <div class="band"><span class="k">Rätt svar: ${L[q.correct]}</span><span class="q">${esc(q.q)}</span>${q.ex ? `<p class="ex">${esc(q.ex)}</p>` : ''}</div>
         <div class="grid">${q.opts.map((o,i) => `<div class="cell ans${i === q.correct ? '' : ' dim'}${q.opts.length === 3 && i === 2 ? ' wide' : ''}"><span class="row">${adot(i)}<span class="k">${L[i]}</span><span class="n" style="margin-left:auto">${counts[i]}</span></span><span class="t">${esc(o)}</span></div>`).join('')}</div>
         <div class="band" style="padding-block:10px"><span class="k">Topp 5</span></div>
         ${rows(ranks(5))}
@@ -570,7 +574,7 @@ function player(){
       app.innerHTML = `${head('facit ' + pad(cur.qi+1) + '/' + pad(cur.n || 0))}
         <div class="hero" id="hero"><span class="k">${ok ? 'Poäng' : 'Missat'}</span><div class="disc ${ok ? '' : 'ring'}"><b>${ok ? '+' + r[0] : '0'}</b></div></div>
         <div class="band"><span class="k">${ok ? 'Rätt' : (did() ? 'Fel' : 'Inget svar')}</span>
-          <span class="row" style="gap:12px">${adot(cur.correct)}<span class="q">${esc(cur.ans)}</span></span></div>
+          <span class="row" style="gap:12px">${adot(cur.correct)}<span class="q">${esc(cur.ans)}</span></span>${cur.ex ? `<p class="ex">${esc(cur.ex)}</p>` : ''}</div>
         <div class="grid">
           <div class="cell"><span class="k">Totalt</span><span class="num">${r[1]}</span></div>
           <div class="cell"><span class="k">Plats</span><span class="num">${pad(r[2])}</span></div>
