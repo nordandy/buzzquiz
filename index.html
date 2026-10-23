@@ -66,7 +66,7 @@ button.cell:disabled{color:var(--soft);cursor:default}
 .face svg{width:100%;height:100%;display:block}
 .face.sm{width:22px;height:22px}.face.big{width:52px;height:52px}.face.xl{width:min(62vw,260px);height:auto;aspect-ratio:1}
 .swatch{align-items:center;justify-content:center;min-height:0;padding:8px}
-.swatch[aria-pressed=true]{background:var(--press);box-shadow:inset 0 0 0 2px var(--ink)}
+button.cell[aria-pressed=true],.swatch[aria-pressed=true]{background:var(--press);box-shadow:inset 0 0 0 2px var(--ink)}
 .rows{display:flex;flex-direction:column;gap:1px;background:var(--line)}
 .rows div{background:var(--cell);display:grid;grid-template-columns:28px 24px 1fr auto;align-items:center;gap:10px;padding:11px 14px}
 .rows .i,.rows .s{font:400 13px/1 var(--mono);color:var(--soft)}.rows .s{color:var(--ink);font-size:14px}
@@ -130,6 +130,16 @@ const adot = (i, cls = '') => `<i class="dot ${cls}" style="--c:var(--o${'abcd'[
 const pad = n => String(n).padStart(2, '0');
 const rows = list => `<div class="rows">${list.map(([av, name, score], i) => `<div><span class="i">${pad(i+1)}</span>${face(av, 'sm')}<span class="nm">${esc(name)}</span><span class="s">${score}</span></div>`).join('')}</div>`;
 const EXAMPLE = 'Vad heter Sveriges huvudstad?\n*Stockholm\nGöteborg\nMalmö\nUppsala\n\nHur många sidor har en oktagon?\n6\n*8\n10\n12';
+// Testquiz om Stockholm, laddas i testläge.
+const TEST = [
+  'På hur många öar ligger Stockholm?\n7\n*14\n21\n30',
+  'Vilket år invigdes Stockholms tunnelbana?\n1933\n*1950\n1964\n1975',
+  'Vad heter regalskeppet som sjönk i Stockholm 1628?\n*Vasa\nKronan\nSvärdet\nMars',
+  'I vilken sal i Stadshuset hålls Nobelbanketten?\n*Blå hallen\nGyllene salen\nRådssalen\nPrinsens galleri',
+  'Vem ritade Stockholms stadsbibliotek?\nRagnar Östberg\n*Gunnar Asplund\nSigurd Lewerentz\nSven Markelius'
+].join('\n\n');
+// Rumskoder: 0001–0099 är testrum, 0100–9999 riktiga spel.
+const isTest = code => Number(code) < 100;
 
 const app = document.getElementById('app');
 const statusEl = document.getElementById('status');
@@ -155,13 +165,18 @@ Q.has('host') ? host() : player();
 
 /* ================= VÄRD ================= */
 function host(){
-  let H = ls.get('quiz-host') || { phase:'setup', text:EXAMPLE, secs:20 };
+  let H = ls.get('quiz-host') || { phase:'setup', text:TEST, secs:20, mode:'test' };
+  if (!H.mode) H.mode = 'test';
   let out, inn, timer, rebT;
   const save = () => ls.set('quiz-host', H);
   const ids = () => Object.keys(H.players || {});
   const ranked = () => ids().sort((a,b) => H.players[b].score - H.players[a].score);
   // Rumskoder i följd: 0001, 0002 … Värden kan skriva en egen.
-  const nextRoom = () => String((ls.get('quiz-last') || 0) % 9999 + 1).padStart(4, '0');
+  const nextRoom = mode => {
+    const last = ls.get('quiz-last-' + mode) || 0;
+    const n = mode === 'test' ? last % 99 + 1 : (last < 100 || last >= 9999 ? 100 : last + 1);
+    return String(n).padStart(4, '0');
+  };
 
   function connect(){
     out = sb.channel('q-' + H.code + '-out');
@@ -221,9 +236,11 @@ function host(){
   function create(){
     const { qs, errs } = parse(H.text);
     const room = ($('#rc').value || '').replace(/\D/g, '');
-    if (!/^\d{4}$/.test(room) || room === '0000') errs.push('Rumskoden ska vara fyra siffror, 0001–9999.');
+    if (!/^\d{4}$/.test(room) || room === '0000') errs.push('Rumskoden ska vara fyra siffror.');
+    else if (H.mode === 'test' && !isTest(room)) errs.push('Testrum har kod 0001–0099.');
+    else if (H.mode === 'live' && isTest(room)) errs.push('0001–0099 är testrum. Välj 0100 eller högre.');
     if (errs.length) { $('#e').textContent = errs.join(' '); return; }
-    ls.set('quiz-last', Number(room));
+    ls.set('quiz-last-' + H.mode, Number(room));
     // gid skiljer omgångar åt när samma kod används igen
     Object.assign(H, { qs, code:room, gid:Math.random().toString(36).slice(2,8), players:{}, ans:{}, phase:'lobby', qi:0 });
     save(); connect(); render();
@@ -266,7 +283,7 @@ function host(){
   function reset(ask){
     if (ask && !confirm('Avsluta spelet? Alla spelare tappar rummet.')) return;
     clearInterval(timer); sb.removeAllChannels(); out = inn = null;
-    H = { phase:'setup', text:H.text, secs:H.secs }; save(); setStatus(true); render();
+    H = { phase:'setup', text:H.text, secs:H.secs, mode:H.mode }; save(); setStatus(true); render();
   }
 
   function render(){
@@ -276,22 +293,28 @@ function host(){
         <div class="band"><span class="k">Nytt quiz</span><p>En fråga per stycke. Första raden är frågan, sedan 2–4 svar. Markera rätt svar med *.</p></div>
         <textarea id="t" spellcheck="false" aria-label="Frågor"></textarea>
         <div class="grid g3">
-          <button class="cell" id="dn" aria-label="Färre sekunder"><span class="k">Tid</span><span class="num">−</span></button>
-          <div class="cell"><span class="k">Sek/fråga</span><span class="num" id="s">${H.secs}</span></div>
-          <button class="cell" id="up" aria-label="Fler sekunder"><span class="k">&nbsp;</span><span class="num">+</span></button>
+          <button class="cell" data-m="test" aria-pressed="${H.mode === 'test'}"><span class="k">0001–0099</span><span class="v">Test</span></button>
+          <button class="cell" data-m="live" aria-pressed="${H.mode === 'live'}"><span class="k">0100–9999</span><span class="v">Skarpt</span></button>
+          <button class="cell" id="s" aria-label="Byt sekunder per fråga"><span class="k">Sek/fråga ↻</span><span class="num">${H.secs}</span></button>
           <label class="cell" style="grid-column:span 2"><span class="k">Rumskod</span><input id="rc" class="num" inputmode="numeric" maxlength="4" autocomplete="off" aria-label="Rumskod"><span class="err" id="e"></span></label>
           <button class="cell go" id="go"><span class="k">Klar</span><span class="v">Skapa rum →</span></button>
         </div>`;
-      $('#t').value = H.text; $('#rc').value = nextRoom();
+      $('#t').value = H.text; $('#rc').value = nextRoom(H.mode);
       $('#t').oninput = e => { H.text = e.target.value; save(); };
-      const step = d => { H.secs = Math.min(120, Math.max(5, H.secs + d)); $('#s').textContent = H.secs; save(); };
-      $('#dn').onclick = () => step(-5); $('#up').onclick = () => step(5);
+      const SECS = [10, 15, 20, 30, 45, 60];
+      $('#s').onclick = () => { H.secs = SECS[(SECS.indexOf(H.secs) + 1) % SECS.length] || 20; save(); render(); };
+      document.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
+        H.mode = b.dataset.m;
+        // Testläge laddar Stockholmsquizet om rutan är tom eller orörd
+        if (H.mode === 'test' && [TEST, EXAMPLE, ''].includes(H.text.trim())) H.text = TEST;
+        save(); render();
+      });
       $('#go').onclick = create;
     }
     else if (H.phase === 'lobby') {
       const link = base + '?r=' + H.code, n = ids().length;
-      app.innerHTML = `${head('värd · lobby')}
-        <div class="band"><span class="k">Rumskod</span><span class="digits">${H.code}</span><span class="k" style="text-transform:none;letter-spacing:0;word-break:break-all">${esc(link)}</span></div>
+      app.innerHTML = `${head('värd · lobby' + (isTest(H.code) ? ' · test' : ''))}
+        <div class="band"><span class="k">${isTest(H.code) ? 'Testrum' : 'Rumskod'}</span><span class="digits">${H.code}</span><span class="k" style="text-transform:none;letter-spacing:0;word-break:break-all">${esc(link)}</span></div>
         <div class="grid">
           <div class="cell" id="qr"></div>
           <div class="cell"><span class="k">Spelare</span><span class="num" style="font-size:56px">${pad(n)}</span></div>
@@ -359,6 +382,7 @@ function player(){
   if (!okAv(me.av)) me.av = newAv();
   ls.set('quiz-me', me);
   let inn, cur = { ph:'lobby' };
+  const roomLbl = 'rum ' + code + (isTest(code) ? ' · test' : '');
   const ak = 'quiz-ans-' + code;
   // Senaste svaret i det här rummet: { g: spel-id, qi: fråga, c: val }
   let A = ls.get(ak), lastG = null;
@@ -384,7 +408,7 @@ function player(){
   }
 
   function form(){
-    app.innerHTML = `${head('rum ' + code)}${mark()}
+    app.innerHTML = `${head(roomLbl)}${mark()}
       <div class="band"><span class="k">Namn</span><input id="n" maxlength="20" placeholder="Ditt namn" autocomplete="nickname"></div>
       <div class="band" style="padding-block:10px;background:var(--cell);color:var(--ink)"><span class="k" style="color:var(--soft)">Välj robot</span></div>
       <div class="grid g3" id="pick"></div>
@@ -442,7 +466,7 @@ function player(){
 
   function render(){
     if (cur.ph === 'lobby') {
-      app.innerHTML = `${head('rum ' + code)}
+      app.innerHTML = `${head(roomLbl)}
         <div class="hero"><span class="k">Du</span>${face(me.av, 'xl')}</div>
         <div class="band"><span class="k">Inne</span><span class="q">${esc(me.name)}</span><p style="color:var(--band-soft)">Quizet startar snart.</p></div>
         <div class="grid"><button class="cell wide" id="ch" style="min-height:52px"><span class="k">Byt namn eller robot</span></button></div>`;
@@ -469,7 +493,7 @@ function player(){
     }
     else if (cur.ph === 'r') {
       const r = cur.res && cur.res[me.id];
-      if (!r) { app.innerHTML = `${head('rum ' + code)}<div class="hero">${face(me.av, 'xl')}</div><div class="band"><span class="q">Du är med från nästa fråga.</span></div>`; return; }
+      if (!r) { app.innerHTML = `${head(roomLbl)}<div class="hero">${face(me.av, 'xl')}</div><div class="band"><span class="q">Du är med från nästa fråga.</span></div>`; return; }
       const ok = r[0] > 0;
       app.innerHTML = `${head('fråga ' + pad(cur.qi+1) + ' · facit')}
         <div class="hero"><span class="k">${ok ? 'Poäng' : 'Missat'}</span><div class="disc ${ok ? '' : 'ring'}"><b>${ok ? '+' + r[0] : '0'}</b></div></div>
