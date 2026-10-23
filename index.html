@@ -2,60 +2,72 @@
 <html lang="sv">
 <head>
 <meta charset="utf-8">
+<meta name="theme-color" content="#121110">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Quiz</title>
+<title>Quiz · Dark Design Group</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Darker+Grotesque:wght@500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-:root{--bg:#EEF0F2;--ink:#16243A;--soft:#5B6878;--card:#FFFFFF;--line:#D3D8DE;--a:#E5484D;--b:#2D6CDF;--c:#E9A92E;--d:#1F9D6B;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{--bg:#121A26;--ink:#EEF0F2;--soft:#9AA6B4;--card:#1C2636;--line:#2C3849;color-scheme:dark}}
+/* Minimal retro: warm off-black, hairlines, split-flap tiles for code and clock, 70s answer colours */
+:root{--bg:#121110;--panel:#1C1A18;--flap:#24211E;--ink:#EFEAE0;--soft:#8D877C;--line:#2F2C28;--a:#D2553A;--b:#3B6F8D;--c:#DDA43A;--d:#5E8C4A;
+  --display:'Darker Grotesque',system-ui,sans-serif;--mono:'DM Mono',ui-monospace,Menlo,monospace;color-scheme:dark}
 *{box-sizing:border-box;margin:0}
 html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font-family:Archivo,system-ui,sans-serif;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);-webkit-tap-highlight-color:transparent}
-#app{max-width:980px;margin:0 auto;padding:20px;min-height:100%;display:flex;flex-direction:column;gap:16px}
-h1,.big{font-stretch:125%;font-weight:900;line-height:1.05;letter-spacing:-.01em}
-h1{font-size:clamp(26px,5.5vw,54px)}
-.code{font-size:clamp(72px,16vw,170px);font-stretch:125%;font-weight:900;letter-spacing:.04em;line-height:1}
-.soft{color:var(--soft)}
-label{display:flex;flex-direction:column;gap:6px;font-weight:600}
-input,textarea{font:inherit;font-size:18px;width:100%;padding:14px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
-textarea{min-height:45vh;font-size:15px;line-height:1.5}
-input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--b);outline-offset:2px}
-button{font:inherit;font-weight:800;font-size:18px;border:0;border-radius:10px;padding:16px 22px;background:var(--ink);color:var(--bg);cursor:pointer}
-button:disabled{opacity:.35;cursor:default}
-button.ghost{background:transparent;color:var(--soft);border:2px solid var(--line);font-weight:600;font-size:15px;padding:10px 14px}
+body{background:var(--bg);color:var(--ink);font-family:var(--display);font-size:20px;font-weight:500;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);-webkit-tap-highlight-color:transparent}
+#app{max-width:980px;margin:0 auto;padding:20px max(20px,env(safe-area-inset-right,0px)) 28px max(20px,env(safe-area-inset-left,0px));min-height:100%;display:flex;flex-direction:column;gap:18px}
+h1,.big{font-weight:900;line-height:.95;letter-spacing:-.01em;text-wrap:balance}
+h1{font-size:clamp(38px,9vw,64px)}
+.soft,.lbl{color:var(--soft)}
+.lbl{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+.brand{display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.brand .logo{font-family:var(--mono);font-weight:500;font-size:13px;letter-spacing:.32em;text-transform:uppercase;color:var(--ink);display:flex;align-items:center}
+.brand .logo svg,.brand .logo img{height:22px;width:auto;display:block}
+.center .brand{align-self:stretch}
+.hero-logo{animation:in .9s ease-out both}
+@keyframes in{from{opacity:0;letter-spacing:.6em}to{opacity:1}}
+.flap{display:inline-flex;gap:5px}
+.flap b{font-family:var(--mono);font-weight:500;font-size:var(--fs,64px);line-height:1;padding:.14em .12em;min-width:.9em;text-align:center;border-radius:4px;color:var(--ink);
+  background:linear-gradient(to bottom,#2B2824 0 49.4%,#0C0B0A 49.4% 50.6%,var(--flap) 50.6%)}
+label{display:flex;flex-direction:column;gap:6px}
+input,textarea{font:inherit;font-size:20px;width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:4px;background:var(--panel);color:var(--ink)}
+textarea{min-height:45vh;font-family:var(--mono);font-size:14px;line-height:1.6}
+input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+button{font:inherit;font-weight:700;font-size:21px;border:0;border-radius:4px;padding:14px 22px;background:var(--ink);color:var(--bg);cursor:pointer}
+button:disabled{opacity:.3;cursor:default}
+button.ghost{background:transparent;color:var(--soft);border:1px solid var(--line);font-family:var(--mono);font-weight:400;font-size:13px;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px}
 .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .spread{justify-content:space-between}
-.avs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%}
-.avs button{font-size:34px;padding:10px;background:var(--card);border:2px solid var(--line)}
-.avs button[aria-pressed=true]{border-color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
-.players{display:flex;flex-wrap:wrap;gap:8px}
-.chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:600}
-.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.opt{color:#fff;border-radius:12px;padding:18px;font-weight:800;font-size:clamp(18px,2.6vw,28px);display:flex;gap:12px;align-items:center;text-align:left;min-height:90px;width:100%}
-.opt .s{font-size:1.1em;opacity:.85}
-.opt .n{margin-left:auto;font-stretch:125%}
-.o0{background:var(--a)}.o1{background:var(--b)}.o2{background:var(--c);color:#16243A}.o3{background:var(--d)}
-.dim{opacity:.22}
-.bar{height:10px;background:var(--line);border-radius:5px;overflow:hidden}
-.bar i{display:block;height:100%;background:var(--ink);transform-origin:left}
-.list{display:flex;flex-direction:column;gap:6px}
-.list div{display:flex;justify-content:space-between;gap:12px;background:var(--card);padding:12px 14px;border-radius:10px;font-weight:700}
-.center{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:14px;border-radius:16px;padding:20px}
+.avs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%}
+.avs button{font-size:30px;padding:10px;background:var(--panel);border:1px solid var(--line)}
+.avs button[aria-pressed=true]{border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c)}
+.players{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);border-radius:4px;padding:4px 10px;font-weight:700;font-size:18px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.opt{color:#fff;border-radius:4px;padding:16px 18px;font-weight:700;font-size:clamp(22px,3vw,30px);line-height:1.05;display:flex;gap:14px;align-items:center;text-align:left;min-height:84px;width:100%}
+.opt .s{font-size:.8em;opacity:.8}
+.opt .n{margin-left:auto;font-family:var(--mono);font-size:.8em}
+.o0{background:var(--a)}.o1{background:var(--b)}.o2{background:var(--c);color:#121110}.o3{background:var(--d)}
+.dim{opacity:.18}
+.bar{height:3px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--c);transform-origin:left}
+.list{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.list div{display:flex;justify-content:space-between;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line);font-weight:700}
+.list div span:last-child{font-family:var(--mono);font-weight:400;font-size:17px}
+.center{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:14px;border-radius:6px;padding:20px}
 .center.o0,.center.o3{color:#fff}
-.av{font-size:80px;line-height:1}
-.ans{background:#fff;color:#16243A;border-radius:12px;padding:12px 16px;font-weight:800;font-size:20px;display:flex;gap:10px;align-items:center;justify-content:center;width:100%;max-width:420px}
-.center .list{width:100%;max-width:420px}
-.center .list div{color:var(--ink)}
+.center.o0 .soft,.center.o3 .soft{color:inherit;opacity:.8}
+.av{font-size:76px;line-height:1}
+.ans{background:var(--bg);color:var(--ink);border-radius:4px;padding:12px 16px;font-weight:700;font-size:24px;display:flex;gap:10px;align-items:center;justify-content:center;width:100%;max-width:420px}
+.center .list{width:100%;max-width:420px;text-align:left}
 .err{color:var(--a);font-weight:700}
-#qr{background:#fff;padding:12px;border-radius:12px}
-#qr img,#qr canvas{width:190px;height:190px;display:block}
-.status{position:fixed;bottom:calc(10px + env(safe-area-inset-bottom,0px));right:12px;font-size:13px}
-@media (max-width:560px){.opts{grid-template-columns:1fr}.opt{min-height:72px}}
-@media (prefers-reduced-motion:reduce){.bar i{transition:none!important}}
+#qr{background:#EFEAE0;padding:10px;border-radius:4px;align-self:flex-start}
+#qr img,#qr canvas{width:170px;height:170px;display:block}
+.status{position:fixed;bottom:calc(10px + env(safe-area-inset-bottom,0px));right:12px;font-family:var(--mono);font-size:12px}
+@media (max-width:560px){.opts{grid-template-columns:1fr}.opt{min-height:68px}}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none!important}.hero-logo{animation:none}}
 </style>
 </head>
 <body>
@@ -66,6 +78,10 @@ const SB_URL = 'https://hfaaazulujezbvwqgmmk.supabase.co';
 const SB_KEY = 'sb_publishable_jDz2jExQDnKe5Z_7nO-esg_9qjZabMW';
 const AV = ['🦊','🐻','🐼','🐸','🐙','🦉','🐯','🦁','🐨','🐵','🦄','🐧','🐢','🦖','🐝','🐳'];
 const SH = ['▲','◆','●','■'];
+// Klistra in loggan som SVG-markup här. Tom sträng ger textlogga.
+const LOGO = '';
+const brand = (right = '', hero = false) => `<header class="brand"><span class="logo${hero ? ' hero-logo' : ''}">${LOGO || 'Dark Design Group'}</span><span class="lbl">${right}</span></header>`;
+const flap = (v, fs) => `<span class="flap"${fs ? ` style="--fs:${fs}"` : ''}>${String(v).split('').map(c => `<b>${esc(c)}</b>`).join('')}</span>`;
 const EXAMPLE = 'Vad heter Sveriges huvudstad?\n*Stockholm\nGöteborg\nMalmö\nUppsala\n\nHur många sidor har en oktagon?\n6\n*8\n10\n12';
 
 const app = document.getElementById('app');
@@ -168,7 +184,7 @@ function host(){
     clearInterval(timer);
     timer = setInterval(() => {
       const left = H.qStart + H.secs*1000 - Date.now();
-      const el = $('#cd'); if (el) el.textContent = Math.max(0, Math.ceil(left/1000));
+      const el = $('#cd'); if (el) el.innerHTML = flap(String(Math.max(0, Math.ceil(left/1000))).padStart(2,'0'), '44px');
       if (left <= 0) reveal();
     }, 250);
   }
@@ -204,6 +220,7 @@ function host(){
     const q = H.qs && H.qs[H.qi];
     if (H.phase === 'setup') {
       app.innerHTML = `
+        ${brand('Värd', true)}
         <h1>Nytt quiz</h1>
         <p class="soft">En fråga per stycke. Första raden är frågan, sedan 2–4 svar. Markera rätt svar med *.</p>
         <textarea id="t" spellcheck="false"></textarea>
@@ -217,22 +234,22 @@ function host(){
     }
     else if (H.phase === 'lobby') {
       const link = base + '?r=' + H.code, n = ids().length;
-      app.innerHTML = `
+      app.innerHTML = `${brand('Värd')}
         <div class="row spread" style="align-items:flex-start">
-          <div><p class="soft">Gå till länken eller skanna koden</p><div class="code">${H.code}</div><p style="word-break:break-all">${esc(link)}</p>${navigator.share ? '<button class="ghost" id="sh">Dela länken</button>' : ''}</div>
+          <div class="row" style="flex-direction:column;align-items:flex-start;gap:10px"><p class="lbl">Rumskod</p>${flap(H.code, 'clamp(56px,16vw,120px)')}<p class="soft" style="word-break:break-all;font-family:var(--mono);font-size:13px">${esc(link)}</p>${navigator.share ? '<button class="ghost" id="sh">Dela länken</button>' : ''}</div>
           <div id="qr"></div>
         </div>
         <div class="row spread"><h1>${n} spelare</h1><button id="start" ${n ? '' : 'disabled'}>Starta quizet</button></div>
         <div class="players">${ids().map(id => `<span class="chip">${H.players[id].av} ${esc(H.players[id].name)}</span>`).join('')}</div>
         <div><button class="ghost" id="x">Avsluta</button></div>`;
-      try { new QRCode($('#qr'), { text:link, width:190, height:190 }); } catch(e){ $('#qr').remove(); }
+      try { new QRCode($('#qr'), { text:link, width:190, height:190, colorDark:'#121110', colorLight:'#EFEAE0' }); } catch(e){ $('#qr').remove(); }
       if ($('#sh')) $('#sh').onclick = () => navigator.share({ title:'Quiz', text:'Gå med i quizet, kod ' + H.code, url:link }).catch(() => {});
       $('#start').onclick = () => startQ(0);
       $('#x').onclick = () => reset(true);
     }
     else if (H.phase === 'question') {
       app.innerHTML = `
-        <div class="row spread"><span class="soft">Fråga ${H.qi+1} av ${H.qs.length}</span><span class="big" id="cd" style="font-size:72px">${H.secs}</span></div>
+        <div class="row spread"><span class="lbl">Fråga ${H.qi+1}/${H.qs.length}</span><span id="cd">${flap(String(H.secs).padStart(2,'0'), '44px')}</span></div>
         <h1>${esc(q.q)}</h1>
         <div class="opts">${q.opts.map((o,i) => `<div class="opt o${i}"><span class="s">${SH[i]}</span>${esc(o)}</div>`).join('')}</div>
         <div class="row spread"><span id="cnt" class="soft">${Object.keys(H.ans).length} / ${ids().length} svar</span><button id="rev">Visa svaret nu</button></div>`;
@@ -242,7 +259,7 @@ function host(){
       const counts = q.opts.map((_,i) => Object.values(H.ans).filter(a => a.c === i).length);
       const last = H.qi + 1 >= H.qs.length;
       app.innerHTML = `
-        <span class="soft">Fråga ${H.qi+1} av ${H.qs.length}</span>
+        <span class="lbl">Fråga ${H.qi+1}/${H.qs.length} · rätt svar</span>
         <h1>${esc(q.q)}</h1>
         <div class="opts">${q.opts.map((o,i) => `<div class="opt o${i} ${i === q.correct ? '' : 'dim'}"><span class="s">${SH[i]}</span>${esc(o)}<span class="n">${counts[i]}</span></div>`).join('')}</div>
         <div class="list">${ranked().slice(0,5).map((id,i) => `<div><span>${i+1}. ${H.players[id].av} ${esc(H.players[id].name)}</span><span>${H.players[id].score}</span></div>`).join('')}</div>
@@ -281,16 +298,16 @@ function player(){
   if (me.name && ls.get('quiz-room') === code) join(); else form();
 
   function askCode(){
-    app.innerHTML = `<div class="center">
+    app.innerHTML = `${brand('', true)}<div class="center">
       <h1>Gå med i quiz</h1>
-      <input id="c" inputmode="numeric" maxlength="4" placeholder="Kod" style="max-width:220px;text-align:center;font-size:32px;font-weight:800">
+      <input id="c" inputmode="numeric" maxlength="4" placeholder="0000" style="max-width:220px;text-align:center;font-family:var(--mono);font-size:40px;letter-spacing:.2em">
       <button id="go">Fortsätt</button></div>`;
     const go = () => { const c = $('#c').value.replace(/\D/g,''); if (c.length === 4) location.search = '?r=' + c; };
     $('#go').onclick = go; $('#c').onkeydown = e => { if (e.key === 'Enter') go(); };
   }
 
   function form(){
-    app.innerHTML = `<div class="center">
+    app.innerHTML = `${brand('Rum ' + code)}<div class="center">
       <h1>Vem är du?</h1>
       <input id="n" maxlength="20" placeholder="Ditt namn" autocomplete="nickname">
       <div class="avs">${AV.map(a => `<button data-a="${a}" aria-pressed="${a === me.av}">${a}</button>`).join('')}</div>
@@ -339,7 +356,7 @@ function player(){
 
   function render(){
     if (cur.ph === 'lobby') {
-      app.innerHTML = `<div class="center">
+      app.innerHTML = `${brand('Rum ' + code, true)}<div class="center">
         <div class="av">${me.av}</div><h1>${esc(me.name)}</h1>
         <p class="soft">Du är med. Quizet startar snart.</p>
         <button class="ghost" id="ch">Byt namn eller figur</button></div>`;
@@ -351,8 +368,8 @@ function player(){
         return;
       }
       app.innerHTML = `
-        <span class="soft">Fråga ${cur.qi+1} av ${cur.n}</span>
-        <h1 style="font-size:clamp(22px,6vw,40px)">${esc(cur.q)}</h1>
+        <span class="lbl">Fråga ${cur.qi+1}/${cur.n}</span>
+        <h1 style="font-size:clamp(32px,8vw,48px)">${esc(cur.q)}</h1>
         <div class="bar"><i id="bar"></i></div>
         <div class="opts">${cur.opts.map((o,i) => `<button class="opt o${i}" data-c="${i}"><span class="s">${SH[i]}</span>${esc(o)}</button>`).join('')}</div>`;
       document.querySelectorAll('.opt').forEach(b => b.onclick = () => answer(Number(b.dataset.c)));
