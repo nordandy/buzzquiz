@@ -452,12 +452,20 @@ function player(){
     $('#go').onclick = go; $('#n').onkeydown = e => { if (e.key === 'Enter') go(); };
   }
 
-  async function sendIn(event, payload, retry = 1){
+  // Skickar till värden och försöker igen tills det går fram (t.ex. efter en tunnel).
+  // Ett nyare meddelande av samma slag ersätter ett äldre som väntar.
+  const waiting = {};
+  async function sendIn(event, payload, tries = 0){
+    waiting[event] = payload;
     try {
       if (inn.httpSend) await inn.httpSend(event, payload);
       else if (await inn.send({ type:'broadcast', event, payload }) !== 'ok') throw new Error('send');
-    } catch(e) { if (retry) setTimeout(() => sendIn(event, payload, 0), 800); }
+      if (waiting[event] === payload) delete waiting[event];
+    } catch(e) {
+      if (tries < 60) setTimeout(() => { if (waiting[event] === payload) sendIn(event, payload, tries + 1); }, Math.min(5000, 600 * 2 ** tries));
+    }
   }
+  addEventListener('online', () => { for (const ev in waiting) sendIn(ev, waiting[ev]); });
 
   // Vänta in rensningen: removeAllChannels stänger anslutningen när den är klar,
   // och utan await stängde den den nya anslutningen vi just öppnat.
