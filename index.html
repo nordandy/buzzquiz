@@ -603,8 +603,9 @@ function player(){
       .on('broadcast', { event:'state' }, ({payload}) => {
         if (payload.ph === 'q') { endAt = Date.now() + (payload.left || 0); openAt = Date.now() + (payload.open || 0); }
         cur = payload; render();
-        // Nytt spel på samma kod (eller värden startade efter oss): anmäl dig igen
-        if (cur.g && cur.g !== lastG) { lastG = cur.g; sendIn('join', { id:me.id, name:me.name, av:me.av }); }
+        // Nytt spel på samma kod, värden startade efter oss, eller värden har varit borta (re)
+        // och kan ha missat vår anmälan: anmäl dig igen
+        if ((cur.g && cur.g !== lastG) || cur.re) { lastG = cur.g; sendIn('join', { id:me.id, name:me.name, av:me.av }); }
         if (cur.ph === 'q' && cur.re && did()) sendIn('answer', { id:me.id, qi:cur.qi, c:A.c });
       })
       .on('broadcast', { event:'cnt' }, ({payload:c}) => {
