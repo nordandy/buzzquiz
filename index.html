@@ -2,86 +2,100 @@
 <html lang="sv">
 <head>
 <meta charset="utf-8">
-<meta name="theme-color" content="#121110">
+<meta name="theme-color" content="#D4D4D1">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Quiz · Dark Design Group</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Darker+Grotesque:wght@500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-/* Minimal retro: warm off-black, hairlines, split-flap tiles for code and clock, 70s answer colours */
-:root{--bg:#121110;--panel:#1C1A18;--flap:#24211E;--ink:#EFEAE0;--soft:#8D877C;--line:#2F2C28;--a:#D2553A;--b:#3B6F8D;--c:#DDA43A;--d:#5E8C4A;
-  --display:'Darker Grotesque',system-ui,sans-serif;--mono:'DM Mono',ui-monospace,Menlo,monospace;color-scheme:dark}
+/* Device panel: grey cells on hairline grid, one black display band, a big signal disc as hero */
+:root{--bg:#D4D4D1;--cell:#E8E8E5;--press:#DADAD6;--line:#BDBDB8;--ink:#151515;--soft:#7A7A75;--band:#161616;--band-ink:#EDEDEA;--band-soft:#8C8C87;--sig:#F25A1E;
+  --oa:#F25A1E;--ob:#1E4E7A;--oc:#F2B01E;--od:#0E5A3A;
+  --sans:'Geist',system-ui,-apple-system,sans-serif;--mono:'Geist Mono',ui-monospace,Menlo,monospace;color-scheme:light}
 *{box-sizing:border-box;margin:0}
 html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font-family:var(--display);font-size:20px;font-weight:500;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);-webkit-tap-highlight-color:transparent}
-#app{max-width:980px;margin:0 auto;padding:20px max(20px,env(safe-area-inset-right,0px)) 28px max(20px,env(safe-area-inset-left,0px));min-height:100%;display:flex;flex-direction:column;gap:18px}
-h1,.big{font-weight:900;line-height:.95;letter-spacing:-.01em;text-wrap:balance}
-h1{font-size:clamp(38px,9vw,64px)}
-.soft,.lbl{color:var(--soft)}
-.lbl{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase}
-.brand{display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--line)}
-.brand .logo{font-family:var(--mono);font-weight:500;font-size:13px;letter-spacing:.32em;text-transform:uppercase;color:var(--ink);display:flex;align-items:center}
-.brand .logo svg,.brand .logo img{height:22px;width:auto;display:block}
-.center .brand{align-self:stretch}
-.hero-logo{animation:in .9s ease-out both}
-@keyframes in{from{opacity:0;letter-spacing:.6em}to{opacity:1}}
-.flap{display:inline-flex;gap:5px}
-.flap b{font-family:var(--mono);font-weight:500;font-size:var(--fs,64px);line-height:1;padding:.14em .12em;min-width:.9em;text-align:center;border-radius:4px;color:var(--ink);
-  background:linear-gradient(to bottom,#2B2824 0 49.4%,#0C0B0A 49.4% 50.6%,var(--flap) 50.6%)}
-label{display:flex;flex-direction:column;gap:6px}
-input,textarea{font:inherit;font-size:20px;width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:4px;background:var(--panel);color:var(--ink)}
-textarea{min-height:45vh;font-family:var(--mono);font-size:14px;line-height:1.6}
-input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--c);outline-offset:2px}
-button{font:inherit;font-weight:700;font-size:21px;border:0;border-radius:4px;padding:14px 22px;background:var(--ink);color:var(--bg);cursor:pointer}
-button:disabled{opacity:.3;cursor:default}
-button.ghost{background:transparent;color:var(--soft);border:1px solid var(--line);font-family:var(--mono);font-weight:400;font-size:13px;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px}
-.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.spread{justify-content:space-between}
-.avs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%}
-.avs button{font-size:30px;padding:10px;background:var(--panel);border:1px solid var(--line)}
-.avs button[aria-pressed=true]{border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c)}
-.players{display:flex;flex-wrap:wrap;gap:6px}
-.chip{border:1px solid var(--line);border-radius:4px;padding:4px 10px;font-weight:700;font-size:18px}
-.opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.opt{color:#fff;border-radius:4px;padding:16px 18px;font-weight:700;font-size:clamp(22px,3vw,30px);line-height:1.05;display:flex;gap:14px;align-items:center;text-align:left;min-height:84px;width:100%}
-.opt .s{font-size:.8em;opacity:.8}
-.opt .n{margin-left:auto;font-family:var(--mono);font-size:.8em}
-.o0{background:var(--a)}.o1{background:var(--b)}.o2{background:var(--c);color:#121110}.o3{background:var(--d)}
-.dim{opacity:.18}
-.bar{height:3px;background:var(--line);overflow:hidden}
-.bar i{display:block;height:100%;background:var(--c);transform-origin:left}
-.list{display:flex;flex-direction:column;border-top:1px solid var(--line)}
-.list div{display:flex;justify-content:space-between;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line);font-weight:700}
-.list div span:last-child{font-family:var(--mono);font-weight:400;font-size:17px}
-.center{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:14px;border-radius:6px;padding:20px}
-.center.o0,.center.o3{color:#fff}
-.center.o0 .soft,.center.o3 .soft{color:inherit;opacity:.8}
-.av{font-size:76px;line-height:1}
-.ans{background:var(--bg);color:var(--ink);border-radius:4px;padding:12px 16px;font-weight:700;font-size:24px;display:flex;gap:10px;align-items:center;justify-content:center;width:100%;max-width:420px}
-.center .list{width:100%;max-width:420px;text-align:left}
-.err{color:var(--a);font-weight:700}
-#qr{background:#EFEAE0;padding:10px;border-radius:4px;align-self:flex-start}
-#qr img,#qr canvas{width:170px;height:170px;display:block}
-.status{position:fixed;bottom:calc(10px + env(safe-area-inset-bottom,0px));right:12px;font-family:var(--mono);font-size:12px}
-@media (max-width:560px){.opts{grid-template-columns:1fr}.opt{min-height:68px}}
-@media (prefers-reduced-motion:reduce){.bar i{transition:none!important}.hero-logo{animation:none}}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.35 var(--sans);padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);-webkit-tap-highlight-color:transparent}
+#app{max-width:520px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;gap:1px;background:var(--line);border-inline:1px solid var(--line)}
+.k{font:500 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--soft)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--cell);padding:12px max(14px,env(safe-area-inset-left,0px)) 12px max(14px,env(safe-area-inset-right,0px))}
+.top .logo{font:600 11px/1 var(--mono);letter-spacing:.1em;text-transform:lowercase;color:var(--ink);display:flex;align-items:center}
+.top .logo svg,.top .logo img{height:18px;width:auto;display:block}
+.band{background:var(--band);color:var(--band-ink);padding:16px 16px 20px;display:flex;flex-direction:column;gap:10px}
+.band .k{color:var(--band-soft)}
+.q{font-weight:500;font-size:clamp(24px,6.6vw,30px);line-height:1.12;letter-spacing:-.01em;text-wrap:balance}
+.digits{font:400 clamp(56px,18vw,88px)/1 var(--mono);letter-spacing:.06em}
+.hero{background:var(--cell);flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px 16px;min-height:200px;position:relative}
+.hero .k{position:absolute;top:12px;left:14px}
+.disc{--c:var(--sig);--p:1;width:min(62vw,260px);aspect-ratio:1;border-radius:50%;position:relative;display:grid;place-items:center;
+  background:conic-gradient(var(--c) calc(var(--p)*1turn),transparent 0);box-shadow:inset 0 0 0 1px var(--line)}
+.disc::after{content:"";position:absolute;left:9%;top:50%;width:7px;height:7px;margin-top:-3.5px;border-radius:50%;background:var(--ink)}
+.disc.ring{background:transparent;box-shadow:inset 0 0 0 2px var(--ink)}
+.disc b{font:400 clamp(44px,14vw,64px)/1 var(--mono);color:var(--ink)}
+.disc.light b{color:#fff}
+.disc.light::after{background:#fff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
+.grid.g3{grid-template-columns:repeat(3,1fr)}.grid.g4{grid-template-columns:repeat(4,1fr)}
+.fill{flex:1;grid-auto-rows:1fr}
+.cell{background:var(--cell);padding:12px 14px;min-height:64px;display:flex;flex-direction:column;justify-content:space-between;gap:8px;text-align:left;color:var(--ink);font:inherit;border:0;border-radius:0;position:relative}
+button.cell{cursor:pointer}
+button.cell:active{background:var(--press)}
+button.cell:disabled{color:var(--soft);cursor:default}
+.cell.go{background:var(--ink);color:var(--band-ink)}
+.cell.go .k{color:var(--band-soft)}
+.cell.go:active{background:#2A2A2A}
+.cell.wide{grid-column:1/-1}
+.cell .v{font-size:20px;font-weight:500;line-height:1.15}
+.cell .num{font:400 32px/1 var(--mono)}
+.row{display:flex;align-items:center;gap:10px}
+.ans .t{font-size:clamp(18px,5vw,22px);font-weight:500;line-height:1.15}
+.ans .n{font:400 22px/1 var(--mono)}
+.ans.dim{color:var(--soft)}.ans.dim .dot{opacity:.3}
+.dot{--c:var(--ink);display:inline-block;flex:none;width:22px;height:22px;border-radius:50%;background:var(--c);position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.22)}
+.dot::after{content:"";position:absolute;left:4px;top:50%;width:3px;height:3px;margin-top:-1.5px;border-radius:50%;background:rgba(255,255,255,.85)}
+.dot.big{width:44px;height:44px}.dot.big::after{left:7px;width:5px;height:5px;margin-top:-2.5px}
+.dot.sm{width:12px;height:12px}.dot.sm::after{display:none}
+.sp{flex:1;background:var(--cell);min-height:0}
+.swatch{align-items:center;justify-content:center;min-height:76px}
+.swatch[aria-pressed=true]{background:var(--press);box-shadow:inset 0 0 0 2px var(--ink)}
+.rows{display:flex;flex-direction:column;gap:1px;background:var(--line)}
+.rows div{background:var(--cell);display:grid;grid-template-columns:28px 14px 1fr auto;align-items:center;gap:10px;padding:11px 14px}
+.rows .i,.rows .s{font:400 13px/1 var(--mono);color:var(--soft)}.rows .s{color:var(--ink);font-size:14px}
+.rows .nm{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.players{background:var(--cell);padding:12px 14px;display:flex;flex-wrap:wrap;gap:6px 14px;flex:1;align-content:flex-start}
+.players span{display:flex;align-items:center;gap:6px;font-size:13px}
+input,textarea{font:inherit;width:100%;border:0;border-radius:0;color:inherit;background:transparent}
+.band input{font-size:28px;font-weight:500;padding:4px 0;border-bottom:1px solid #3A3A3A;color:var(--band-ink)}
+.band input::placeholder{color:#55554F}
+textarea{background:var(--cell);font:400 13px/1.6 var(--mono);padding:14px;min-height:42vh;resize:none;flex:1}
+input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--sig);outline-offset:-2px}
+.bar{height:3px;background:#2E2E2E}
+.bar i{display:block;height:100%;background:var(--sig);transform-origin:left}
+.err{color:var(--sig);font:500 12px/1.4 var(--mono)}
+#qr{display:grid;place-items:center}
+#qr img,#qr canvas{width:132px;height:132px;display:block;image-rendering:pixelated}
+.status{position:fixed;bottom:calc(8px + env(safe-area-inset-bottom,0px));right:10px;font:500 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--sig)}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none!important}}
 </style>
 </head>
 <body>
 <main id="app"></main>
-<div id="status" class="status soft"></div>
+<div id="status" class="status"></div>
 <script>
 const SB_URL = 'https://hfaaazulujezbvwqgmmk.supabase.co';
 const SB_KEY = 'sb_publishable_jDz2jExQDnKe5Z_7nO-esg_9qjZabMW';
-const AV = ['🦊','🐻','🐼','🐸','🐙','🦉','🐯','🦁','🐨','🐵','🦄','🐧','🐢','🦖','🐝','🐳'];
-const SH = ['▲','◆','●','■'];
+// Figurer: färgade rattar, som i orthoplay.
+const AV = ['#F25A1E','#1E4E7A','#F2B01E','#0E5A3A','#B4262C','#151515','#8C8C87','#F4F4F1'];
+const L = ['A','B','C','D'];
 // Klistra in loggan som SVG-markup här. Tom sträng ger textlogga.
 const LOGO = '';
-const brand = (right = '', hero = false) => `<header class="brand"><span class="logo${hero ? ' hero-logo' : ''}">${LOGO || 'Dark Design Group'}</span><span class="lbl">${right}</span></header>`;
-const flap = (v, fs) => `<span class="flap"${fs ? ` style="--fs:${fs}"` : ''}>${String(v).split('').map(c => `<b>${esc(c)}</b>`).join('')}</span>`;
+const head = (right = '') => `<header class="top"><span class="logo">${LOGO || 'dark design group'}</span><span class="k">${right}</span></header>`;
+const dot = (c, cls = '') => `<i class="dot ${cls}" style="--c:${AV.includes(c) ? c : AV[0]}"></i>`;
+const adot = (i, cls = '') => `<i class="dot ${cls}" style="--c:var(--o${'abcd'[i]})"></i>`;
+const pad = n => String(n).padStart(2, '0');
+const rows = list => `<div class="rows">${list.map(([av, name, score], i) => `<div><span class="i">${pad(i+1)}</span>${dot(av, 'sm')}<span class="nm">${esc(name)}</span><span class="s">${score}</span></div>`).join('')}</div>`;
 const EXAMPLE = 'Vad heter Sveriges huvudstad?\n*Stockholm\nGöteborg\nMalmö\nUppsala\n\nHur många sidor har en oktagon?\n6\n*8\n10\n12';
 
 const app = document.getElementById('app');
@@ -151,7 +165,7 @@ function host(){
     H.ans[p.id] = { c, ms: Date.now() - H.qStart };
     save();
     const n = Object.keys(H.ans).length;
-    const el = $('#cnt'); if (el) el.textContent = n + ' / ' + ids().length + ' svar';
+    const el = $('#cnt'); if (el) el.textContent = n + '/' + ids().length;
     if (n >= ids().length) reveal();
   }
 
@@ -184,7 +198,7 @@ function host(){
     clearInterval(timer);
     timer = setInterval(() => {
       const left = H.qStart + H.secs*1000 - Date.now();
-      const el = $('#cd'); if (el) el.innerHTML = flap(String(Math.max(0, Math.ceil(left/1000))).padStart(2,'0'), '44px');
+      const el = $('#disc'); if (el) { el.style.setProperty('--p', Math.max(0, left/(H.secs*1000))); el.firstChild.textContent = pad(Math.max(0, Math.ceil(left/1000))); }
       if (left <= 0) reveal();
     }, 250);
   }
@@ -217,61 +231,74 @@ function host(){
   }
 
   function render(){
-    const q = H.qs && H.qs[H.qi];
+    const q = H.qs && H.qs[H.qi], ranks = n => ranked().slice(0,n).map(id => [H.players[id].av, H.players[id].name, H.players[id].score]);
     if (H.phase === 'setup') {
-      app.innerHTML = `
-        ${brand('Värd', true)}
-        <h1>Nytt quiz</h1>
-        <p class="soft">En fråga per stycke. Första raden är frågan, sedan 2–4 svar. Markera rätt svar med *.</p>
-        <textarea id="t" spellcheck="false"></textarea>
-        <label style="max-width:220px">Sekunder per fråga <input id="s" type="number" min="5" max="120" inputmode="numeric"></label>
-        <p class="err" id="e"></p>
-        <button id="go">Skapa rum</button>`;
-      $('#t').value = H.text; $('#s').value = H.secs;
+      app.innerHTML = `${head('värd')}
+        <div class="band"><span class="k">Nytt quiz</span><p>En fråga per stycke. Första raden är frågan, sedan 2–4 svar. Markera rätt svar med *.</p></div>
+        <textarea id="t" spellcheck="false" aria-label="Frågor"></textarea>
+        <div class="grid g3">
+          <button class="cell" id="dn" aria-label="Färre sekunder"><span class="k">Tid</span><span class="num">−</span></button>
+          <div class="cell"><span class="k">Sek/fråga</span><span class="num" id="s">${H.secs}</span></div>
+          <button class="cell" id="up" aria-label="Fler sekunder"><span class="k">&nbsp;</span><span class="num">+</span></button>
+          <button class="cell go wide" id="go"><span class="k">Klar</span><span class="v">Skapa rum →</span><span class="err" id="e"></span></button>
+        </div>`;
+      $('#t').value = H.text;
       $('#t').oninput = e => { H.text = e.target.value; save(); };
-      $('#s').oninput = e => { H.secs = Math.min(120, Math.max(5, parseInt(e.target.value) || 20)); save(); };
+      const step = d => { H.secs = Math.min(120, Math.max(5, H.secs + d)); $('#s').textContent = H.secs; save(); };
+      $('#dn').onclick = () => step(-5); $('#up').onclick = () => step(5);
       $('#go').onclick = create;
     }
     else if (H.phase === 'lobby') {
       const link = base + '?r=' + H.code, n = ids().length;
-      app.innerHTML = `${brand('Värd')}
-        <div class="row spread" style="align-items:flex-start">
-          <div class="row" style="flex-direction:column;align-items:flex-start;gap:10px"><p class="lbl">Rumskod</p>${flap(H.code, 'clamp(56px,16vw,120px)')}<p class="soft" style="word-break:break-all;font-family:var(--mono);font-size:13px">${esc(link)}</p>${navigator.share ? '<button class="ghost" id="sh">Dela länken</button>' : ''}</div>
-          <div id="qr"></div>
+      app.innerHTML = `${head('värd · lobby')}
+        <div class="band"><span class="k">Rumskod</span><span class="digits">${H.code}</span><span class="k" style="text-transform:none;letter-spacing:0;word-break:break-all">${esc(link)}</span></div>
+        <div class="grid">
+          <div class="cell" id="qr"></div>
+          <div class="cell"><span class="k">Spelare</span><span class="num" style="font-size:56px">${pad(n)}</span></div>
+          <button class="cell" id="sh"><span class="k">Länk</span><span class="v">Dela</span></button>
+          <button class="cell go" id="start" ${n ? '' : 'disabled'}><span class="k">Kör</span><span class="v">Starta →</span></button>
         </div>
-        <div class="row spread"><h1>${n} spelare</h1><button id="start" ${n ? '' : 'disabled'}>Starta quizet</button></div>
-        <div class="players">${ids().map(id => `<span class="chip">${H.players[id].av} ${esc(H.players[id].name)}</span>`).join('')}</div>
-        <div><button class="ghost" id="x">Avsluta</button></div>`;
-      try { new QRCode($('#qr'), { text:link, width:190, height:190, colorDark:'#121110', colorLight:'#EFEAE0' }); } catch(e){ $('#qr').remove(); }
-      if ($('#sh')) $('#sh').onclick = () => navigator.share({ title:'Quiz', text:'Gå med i quizet, kod ' + H.code, url:link }).catch(() => {});
+        <div class="players">${ids().map(id => `<span>${dot(H.players[id].av, 'sm')}${esc(H.players[id].name)}</span>`).join('') || '<span class="k">Väntar på spelare</span>'}</div>
+        <div class="grid"><button class="cell wide" id="x" style="min-height:48px"><span class="k">Avsluta</span></button></div>`;
+      try { new QRCode($('#qr'), { text:link, width:132, height:132, colorDark:'#151515', colorLight:'#E8E8E5' }); } catch(e){ $('#qr').innerHTML = '<span class="k">QR saknas</span>'; }
+      $('#sh').onclick = () => navigator.share ? navigator.share({ title:'Quiz', text:'Gå med i quizet, kod ' + H.code, url:link }).catch(() => {}) : navigator.clipboard && navigator.clipboard.writeText(link).catch(() => {});
       $('#start').onclick = () => startQ(0);
       $('#x').onclick = () => reset(true);
     }
     else if (H.phase === 'question') {
-      app.innerHTML = `
-        <div class="row spread"><span class="lbl">Fråga ${H.qi+1}/${H.qs.length}</span><span id="cd">${flap(String(H.secs).padStart(2,'0'), '44px')}</span></div>
-        <h1>${esc(q.q)}</h1>
-        <div class="opts">${q.opts.map((o,i) => `<div class="opt o${i}"><span class="s">${SH[i]}</span>${esc(o)}</div>`).join('')}</div>
-        <div class="row spread"><span id="cnt" class="soft">${Object.keys(H.ans).length} / ${ids().length} svar</span><button id="rev">Visa svaret nu</button></div>`;
+      const left = Math.max(0, H.qStart + H.secs*1000 - Date.now());
+      app.innerHTML = `${head('fråga ' + pad(H.qi+1) + '/' + pad(H.qs.length))}
+        <div class="hero"><span class="k">Tid</span><div class="disc" id="disc" style="--p:${left/(H.secs*1000)}"><b>${pad(Math.ceil(left/1000))}</b></div></div>
+        <div class="band"><span class="q">${esc(q.q)}</span></div>
+        <div class="grid">${q.opts.map((o,i) => `<div class="cell ans${q.opts.length === 3 && i === 2 ? ' wide' : ''}"><span class="row">${adot(i)}<span class="k">${L[i]}</span></span><span class="t">${esc(o)}</span></div>`).join('')}</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Svar</span><span class="num" id="cnt">${Object.keys(H.ans).length}/${ids().length}</span></div>
+          <button class="cell go" id="rev"><span class="k">Stoppa</span><span class="v">Visa svar →</span></button>
+        </div>`;
       $('#rev').onclick = reveal;
     }
     else if (H.phase === 'reveal') {
       const counts = q.opts.map((_,i) => Object.values(H.ans).filter(a => a.c === i).length);
       const last = H.qi + 1 >= H.qs.length;
-      app.innerHTML = `
-        <span class="lbl">Fråga ${H.qi+1}/${H.qs.length} · rätt svar</span>
-        <h1>${esc(q.q)}</h1>
-        <div class="opts">${q.opts.map((o,i) => `<div class="opt o${i} ${i === q.correct ? '' : 'dim'}"><span class="s">${SH[i]}</span>${esc(o)}<span class="n">${counts[i]}</span></div>`).join('')}</div>
-        <div class="list">${ranked().slice(0,5).map((id,i) => `<div><span>${i+1}. ${H.players[id].av} ${esc(H.players[id].name)}</span><span>${H.players[id].score}</span></div>`).join('')}</div>
-        <div class="row spread"><button class="ghost" id="x">Avsluta</button><button id="nx">${last ? 'Visa resultat' : 'Nästa fråga'}</button></div>`;
+      app.innerHTML = `${head('fråga ' + pad(H.qi+1) + '/' + pad(H.qs.length) + ' · facit')}
+        <div class="band"><span class="k">Rätt svar: ${L[q.correct]}</span><span class="q">${esc(q.q)}</span></div>
+        <div class="grid">${q.opts.map((o,i) => `<div class="cell ans${i === q.correct ? '' : ' dim'}${q.opts.length === 3 && i === 2 ? ' wide' : ''}"><span class="row">${adot(i)}<span class="k">${L[i]}</span><span class="n" style="margin-left:auto">${counts[i]}</span></span><span class="t">${esc(o)}</span></div>`).join('')}</div>
+        <div class="band" style="padding-block:10px"><span class="k">Topp 5</span></div>
+        ${rows(ranks(5))}
+        <div class="sp"></div>
+        <div class="grid">
+          <button class="cell" id="x"><span class="k">Avsluta</span></button>
+          <button class="cell go" id="nx"><span class="k">${last ? 'Sista' : 'Nästa'}</span><span class="v">${last ? 'Resultat →' : 'Nästa fråga →'}</span></button>
+        </div>`;
       $('#nx').onclick = next;
       $('#x').onclick = () => reset(true);
     }
     else if (H.phase === 'end') {
-      app.innerHTML = `
-        <h1>Resultat</h1>
-        <div class="list">${ranked().slice(0,10).map((id,i) => `<div><span>${['🥇','🥈','🥉'][i] || (i+1)+'.'} ${H.players[id].av} ${esc(H.players[id].name)}</span><span>${H.players[id].score}</span></div>`).join('')}</div>
-        <div><button id="new">Nytt quiz</button></div>`;
+      app.innerHTML = `${head('resultat')}
+        <div class="band"><span class="k">Slutresultat · ${ids().length} spelare</span><span class="q">${H.players[ranked()[0]] ? esc(H.players[ranked()[0]].name) + ' vann.' : 'Klart.'}</span></div>
+        ${rows(ranks(10))}
+        <div class="sp"></div>
+        <div class="grid"><button class="cell go wide" id="new"><span class="k">Igen</span><span class="v">Nytt quiz →</span></button></div>`;
       $('#new').onclick = () => reset(false);
     }
   }
@@ -289,6 +316,7 @@ function player(){
     id: (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now()),
     name:'', av: AV[Math.floor(Math.random()*AV.length)]
   };
+  if (!AV.includes(me.av)) me.av = AV[Math.floor(Math.random()*AV.length)];
   ls.set('quiz-me', me);
   let inn, cur = { ph:'lobby' };
   const ak = 'quiz-ans-' + code;
@@ -298,24 +326,31 @@ function player(){
   if (me.name && ls.get('quiz-room') === code) join(); else form();
 
   function askCode(){
-    app.innerHTML = `${brand('', true)}<div class="center">
-      <h1>Gå med i quiz</h1>
-      <input id="c" inputmode="numeric" maxlength="4" placeholder="0000" style="max-width:220px;text-align:center;font-family:var(--mono);font-size:40px;letter-spacing:.2em">
-      <button id="go">Fortsätt</button></div>`;
-    const go = () => { const c = $('#c').value.replace(/\D/g,''); if (c.length === 4) location.search = '?r=' + c; };
-    $('#go').onclick = go; $('#c').onkeydown = e => { if (e.key === 'Enter') go(); };
+    let v = '';
+    app.innerHTML = `${head('quiz')}
+      <div class="band"><span class="k">Rumskod</span><span class="digits" id="c">____</span></div>
+      <div class="grid g3 fill">${[1,2,3,4,5,6,7,8,9,'⌫',0,'→'].map(k => `<button class="cell${k === '→' ? ' go' : ''}" data-k="${k}" style="align-items:center;justify-content:center"><span class="num">${k}</span></button>`).join('')}</div>`;
+    const show = () => { $('#c').textContent = (v + '____').slice(0,4); };
+    document.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
+      const k = b.dataset.k;
+      if (k === '⌫') v = v.slice(0,-1);
+      else if (k === '→') { if (v.length === 4) location.search = '?r=' + v; return; }
+      else if (v.length < 4) v += k;
+      show();
+    });
   }
 
   function form(){
-    app.innerHTML = `${brand('Rum ' + code)}<div class="center">
-      <h1>Vem är du?</h1>
-      <input id="n" maxlength="20" placeholder="Ditt namn" autocomplete="nickname">
-      <div class="avs">${AV.map(a => `<button data-a="${a}" aria-pressed="${a === me.av}">${a}</button>`).join('')}</div>
-      <button id="go" style="width:100%">Gå med</button></div>`;
+    app.innerHTML = `${head('rum ' + code)}
+      <div class="band"><span class="k">Namn</span><input id="n" maxlength="20" placeholder="Ditt namn" autocomplete="nickname"></div>
+      <div class="band" style="padding-block:10px;background:var(--cell);color:var(--ink)"><span class="k" style="color:var(--soft)">Välj färg</span></div>
+      <div class="grid g4">${AV.map(a => `<button class="cell swatch" data-a="${a}" aria-pressed="${a === me.av}" aria-label="Färg">${dot(a, 'big')}</button>`).join('')}</div>
+      <div class="sp"></div>
+      <div class="grid"><button class="cell go wide" id="go"><span class="k">Klar</span><span class="v">Gå med →</span></button></div>`;
     $('#n').value = me.name;
-    document.querySelectorAll('.avs button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.swatch').forEach(b => b.onclick = () => {
       me.av = b.dataset.a;
-      document.querySelectorAll('.avs button').forEach(x => x.setAttribute('aria-pressed', x === b));
+      document.querySelectorAll('.swatch').forEach(x => x.setAttribute('aria-pressed', x === b));
     });
     const go = () => {
       const n = $('#n').value.trim(); if (!n) { $('#n').focus(); return; }
@@ -355,24 +390,28 @@ function player(){
   }
 
   function render(){
+    const meDisc = (txt = '', cls = '') => `<div class="disc ${cls}" style="--c:${me.av}"><b>${txt}</b></div>`;
+    const light = ['#151515','#1E4E7A','#0E5A3A','#B4262C'].includes(me.av) ? 'light' : '';
     if (cur.ph === 'lobby') {
-      app.innerHTML = `${brand('Rum ' + code, true)}<div class="center">
-        <div class="av">${me.av}</div><h1>${esc(me.name)}</h1>
-        <p class="soft">Du är med. Quizet startar snart.</p>
-        <button class="ghost" id="ch">Byt namn eller figur</button></div>`;
+      app.innerHTML = `${head('rum ' + code)}
+        <div class="hero"><span class="k">Du</span>${meDisc('', light)}</div>
+        <div class="band"><span class="k">Inne</span><span class="q">${esc(me.name)}</span><p style="color:var(--band-soft)">Quizet startar snart.</p></div>
+        <div class="grid"><button class="cell wide" id="ch" style="min-height:52px"><span class="k">Byt namn eller färg</span></button></div>`;
       $('#ch').onclick = form;
     }
     else if (cur.ph === 'q') {
       if (answered === cur.qi) {
-        app.innerHTML = `<div class="center"><div class="av">${me.av}</div><h1>Svar skickat</h1><p class="soft">Vänta på rätt svar.</p></div>`;
+        const c = ls.get(ak + '-c');
+        app.innerHTML = `${head('fråga ' + pad(cur.qi+1) + '/' + pad(cur.n))}
+          <div class="hero"><span class="k">Ditt svar</span><div class="disc ${c === 0 || c === 2 ? '' : 'light'}" style="--c:var(--o${'abcd'[c] || 'a'})"><b>${L[c] || ''}</b></div></div>
+          <div class="band"><span class="k">Skickat</span><span class="q">Väntar på rätt svar.</span></div>`;
         return;
       }
-      app.innerHTML = `
-        <span class="lbl">Fråga ${cur.qi+1}/${cur.n}</span>
-        <h1 style="font-size:clamp(32px,8vw,48px)">${esc(cur.q)}</h1>
+      app.innerHTML = `${head('fråga ' + pad(cur.qi+1) + '/' + pad(cur.n))}
+        <div class="band"><span class="q">${esc(cur.q)}</span></div>
         <div class="bar"><i id="bar"></i></div>
-        <div class="opts">${cur.opts.map((o,i) => `<button class="opt o${i}" data-c="${i}"><span class="s">${SH[i]}</span>${esc(o)}</button>`).join('')}</div>`;
-      document.querySelectorAll('.opt').forEach(b => b.onclick = () => answer(Number(b.dataset.c)));
+        <div class="grid fill" style="flex:1">${cur.opts.map((o,i) => `<button class="cell ans${cur.opts.length === 3 && i === 2 ? ' wide' : ''}" data-c="${i}"><span class="row">${adot(i)}<span class="k">${L[i]}</span></span><span class="t">${esc(o)}</span></button>`).join('')}</div>`;
+      document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => answer(Number(b.dataset.c)));
       const bar = $('#bar'), left = cur.left || 0, tot = (cur.secs || 0) * 1000;
       bar.style.transform = 'scaleX(' + (tot ? Math.min(1, left / tot) : (left > 0 ? 1 : 0)) + ')';
       bar.offsetWidth;
@@ -381,22 +420,23 @@ function player(){
     }
     else if (cur.ph === 'r') {
       const r = cur.res && cur.res[me.id];
-      if (!r) { app.innerHTML = `<div class="center"><div class="av">${me.av}</div><h1>Du är med från nästa fråga</h1></div>`; return; }
+      if (!r) { app.innerHTML = `${head('rum ' + code)}<div class="hero">${meDisc('', light)}</div><div class="band"><span class="q">Du är med från nästa fråga.</span></div>`; return; }
       const ok = r[0] > 0;
-      app.innerHTML = `<div class="center ${ok ? 'o3' : 'o0'}">
-        <h1 style="font-size:64px">${ok ? 'Rätt!' : (answered === cur.qi ? 'Fel' : 'Inget svar')}</h1>
-        ${ok ? `<p class="big" style="font-size:40px">+${r[0]}</p>` : ''}
-        ${ok ? '' : `<p class="soft" style="color:inherit;opacity:.85">Rätt svar</p><div class="ans"><span style="color:var(--${'abcd'[cur.correct]})">${SH[cur.correct]}</span>${esc(cur.ans)}</div>`}
-        <p>${r[1]} poäng totalt</p><p class="big" style="font-size:28px">Plats ${r[2]}</p></div>`;
+      app.innerHTML = `${head('fråga ' + pad(cur.qi+1) + ' · facit')}
+        <div class="hero"><span class="k">${ok ? 'Poäng' : 'Missat'}</span><div class="disc ${ok ? '' : 'ring'}"><b>${ok ? '+' + r[0] : '0'}</b></div></div>
+        <div class="band"><span class="k">${ok ? 'Rätt' : (answered === cur.qi ? 'Fel' : 'Inget svar')}</span>
+          <span class="row" style="gap:12px">${adot(cur.correct)}<span class="q">${esc(cur.ans)}</span></span></div>
+        <div class="grid">
+          <div class="cell"><span class="k">Totalt</span><span class="num">${r[1]}</span></div>
+          <div class="cell"><span class="k">Plats</span><span class="num">${pad(r[2])}</span></div>
+        </div>`;
     }
     else if (cur.ph === 'end') {
       const r = cur.res && cur.res[me.id];
-      app.innerHTML = `<div class="center">
-        <div class="av">${r && r[2] <= 3 ? ['🥇','🥈','🥉'][r[2]-1] : me.av}</div>
-        <h1>${r ? 'Plats ' + r[2] + ' av ' + cur.n : 'Quizet är slut'}</h1>
-        ${r ? `<p class="big" style="font-size:32px">${r[1]} poäng</p>` : ''}
-        ${cur.top ? `<div class="list">${cur.top.map((t,i) => `<div><span>${['🥇','🥈','🥉'][i] || (i+1)+'.'} ${t[0]} ${esc(t[1])}</span><span>${t[2]}</span></div>`).join('')}</div>` : ''}
-        <p class="soft">Tack för att du spelade!</p></div>`;
+      app.innerHTML = `${head('resultat')}
+        <div class="hero"><span class="k">Plats</span><div class="disc ${r && r[2] <= 3 ? '' : 'ring'}"><b>${r ? pad(r[2]) : '–'}</b></div></div>
+        <div class="band"><span class="k">${r ? 'av ' + cur.n + ' spelare' : 'Quizet är slut'}</span><span class="q">${r ? r[1] + ' poäng' : 'Tack för att du spelade.'}</span></div>
+        ${cur.top ? rows(cur.top) : ''}`;
     }
   }
 }
