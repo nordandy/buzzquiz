@@ -438,14 +438,21 @@ function host(){
           : `<div class="grid tight">${q.opts.map((o,i) => `<div class="cell ans${q.opts.length === 3 && i === 2 ? ' wide' : ''}"><span class="row">${adot(i)}<span class="k">${L[i]}</span></span><span class="t${o.length > 26 ? ' long' : ''}">${esc(o)}</span></div>`).join('')}</div>`}
         <div class="grid act">
           <div class="cell"><span class="k">Svar</span><span class="num" id="cnt">${Object.keys(H.ans).length}/${ids().length}</span></div>
-          <button class="cell go" id="rev"><span class="k">Stoppa</span><span class="v">Visa svar →</span></button>
+          <button class="cell go" id="rev"><span class="k">Stoppa tiden</span><span class="v">Visa svar →</span></button>
         </div>`;
-      $('#rev').onclick = reveal;
+      // Två tryck krävs, så att svaret inte visas för alla av misstag
+      let armed = null;
+      $('#rev').onclick = () => {
+        if (armed) { clearTimeout(armed); return reveal(); }
+        $('#rev').innerHTML = '<span class="k">Visar svaret för alla</span><span class="v">Tryck igen</span>';
+        $('#rev').style.background = 'var(--sig)';
+        armed = setTimeout(() => { armed = null; const b = $('#rev'); if (b) { b.innerHTML = '<span class="k">Stoppa tiden</span><span class="v">Visa svar →</span>'; b.style.background = ''; } }, 3000);
+      };
       $('#sec').textContent = Math.ceil(Math.min(left, H.secs*1000)/1000); $('#pie').style.setProperty('--p', Math.min(1, left/(H.secs*1000)));
     }
     else if (H.phase === 'reveal' && q.num != null) {
       const last = H.qi + 1 >= H.qs.length;
-      app.innerHTML = `${head('facit ' + pad(H.qi+1) + '/' + pad(H.qs.length))}
+      app.innerHTML = `${head('svar ' + pad(H.qi+1) + '/' + pad(H.qs.length))}
         <div class="band"><span class="k">Rätt svar</span><span class="digits" style="font-size:clamp(40px,12vw,64px)">${fmt(q.num)}</span><span class="q long">${esc(q.q)}</span>${q.ex ? `<p class="ex">${esc(q.ex)}</p>` : ''}</div>
         <div class="band" style="padding-block:10px"><span class="k">Närmast</span></div>
         ${rows((H.close || []).map(id => [H.players[id].av, H.players[id].name, fmt(H.ans[id].c)]))}
@@ -460,7 +467,7 @@ function host(){
     else if (H.phase === 'reveal') {
       const counts = q.opts.map((_,i) => Object.values(H.ans).filter(a => a.c === i).length);
       const last = H.qi + 1 >= H.qs.length;
-      app.innerHTML = `${head('facit ' + pad(H.qi+1) + '/' + pad(H.qs.length))}
+      app.innerHTML = `${head('svar ' + pad(H.qi+1) + '/' + pad(H.qs.length))}
         <div class="band"><span class="k">Rätt svar: ${L[q.correct]}</span><span class="q${q.q.length > 70 ? ' long' : ''}">${esc(q.q)}</span>${q.ex ? `<p class="ex">${esc(q.ex)}</p>` : ''}</div>
         <div class="grid">${q.opts.map((o,i) => `<div class="cell ans${i === q.correct ? '' : ' dim'}${q.opts.length === 3 && i === 2 ? ' wide' : ''}"><span class="row">${adot(i)}<span class="k">${L[i]}</span><span class="n" style="margin-left:auto">${counts[i]}</span></span><span class="t${o.length > 26 ? ' long' : ''}">${esc(o)}</span></div>`).join('')}</div>
         <div class="band" style="padding-block:10px"><span class="k">Topp 5</span></div>
@@ -601,8 +608,9 @@ function player(){
       if (!el) return clearInterval(clockT);
       el.textContent = reading ? Math.ceil((openAt - now) / 1000) : Math.ceil(left / 1000);
       if (pie) pie.style.setProperty('--p', reading ? 1 : cur.secs ? Math.min(1, left / (cur.secs * 1000)) : 0);
-      const g = $('#opts'); if (g) g.classList.toggle('locked', reading);
-      const rd = $('#rd'); if (rd) rd.textContent = reading ? 'Läs frågan' : (cur.round || 'Svara nu');
+      const over = !reading && left <= 0;
+      const g = $('#opts'); if (g) g.classList.toggle('locked', reading || over);
+      const rd = $('#rd'); if (rd) rd.textContent = reading ? 'Läs frågan' : over ? 'Tiden är ute' : (cur.round || 'Svara nu');
     };
     step(); clockT = setInterval(step, 250);
   }
@@ -677,7 +685,7 @@ function player(){
       if (!r) { app.innerHTML = `${head(roomLbl)}<div class="hero">${face(me.av, 'xl')}</div><div class="band"><span class="q">Du är med från nästa fråga.</span></div>`; return; }
       if (cur.num) {
         const top = r[2] > 0 && r[2] <= 3;
-        app.innerHTML = `${head('facit ' + pad(cur.qi+1) + '/' + pad(cur.n || 0))}
+        app.innerHTML = `${head('fråga ' + pad(cur.qi+1) + '/' + pad(cur.n || 0))}
           <div class="hero" id="hero"><span class="k">${r[2] ? 'Närmast, plats' : 'Inget svar'}</span><div class="disc ${top ? '' : 'ring'}"><b>${r[2] ? pad(r[2]) : '–'}</b></div></div>
           <div class="band"><span class="k">Rätt svar</span><span class="q">${esc(cur.ans)}</span>${cur.ex ? `<p class="ex">${esc(cur.ex)}</p>` : ''}</div>
           <div class="grid">
@@ -689,9 +697,9 @@ function player(){
       }
       const ok = r[0] > 0, st = r[5] || 0, bonus = r[6] || 0;
       const gap = r[2] === 1 ? 'Du leder!' : r[4] === 0 ? 'Delad plats med ' + esc(r[3]) : r[4] + ' poäng efter ' + esc(r[3]);
-      app.innerHTML = `${head('facit ' + pad(cur.qi+1) + '/' + pad(cur.n || 0))}
-        <div class="hero keep" id="hero"><span class="k">${ok ? (st >= 2 ? st + ' rätt i rad' : 'Poäng') : 'Missat'}</span><div class="disc ${ok ? '' : 'ring'}"><b>${ok ? '+' + r[0] : '0'}</b></div></div>
-        <div class="band"><span class="k">${ok ? 'Rätt · +' + r[0] + (bonus ? ' (varav ' + bonus + ' i rad-bonus)' : '') : (did() ? 'Fel' : 'Inget svar')}</span>
+      app.innerHTML = `${head('fråga ' + pad(cur.qi+1) + '/' + pad(cur.n || 0))}
+        <div class="hero keep" id="hero"><span class="k">${ok ? (st >= 2 ? st + ' rätt i rad' : 'Dina poäng') : 'Inga poäng'}</span><div class="disc ${ok ? '' : 'ring'}"><b>${ok ? '+' + r[0] : '0'}</b></div></div>
+        <div class="band"><span class="k">${ok ? 'Rätt svar · +' + r[0] + (bonus ? ' (varav ' + bonus + ' i rad-bonus)' : '') : (did() ? 'Fel svar · rätt är' : 'Du hann inte svara · rätt är')}</span>
           <span class="row" style="gap:12px">${adot(cur.correct)}<span class="q">${esc(cur.ans)}</span></span>${cur.ex ? `<p class="ex">${esc(cur.ex)}</p>` : ''}</div>
         <div class="grid">
           <div class="cell"><span class="k">Totalt</span><span class="num">${r[1]}</span></div>
