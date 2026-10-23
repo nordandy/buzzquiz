@@ -101,6 +101,10 @@ button.cell[aria-pressed=true]{background:var(--press);box-shadow:inset 0 0 0 2p
 .rows .me{background:var(--press);box-shadow:inset 3px 0 0 var(--sig)}
 .who{background:var(--cell);padding:10px var(--pad);display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;flex:0 1 auto!important;min-height:0;max-height:24dvh;overflow-y:auto}
 .who:empty{display:none}
+.pwho{background:var(--cell);display:flex;gap:5px;padding:7px var(--pad);overflow-x:auto;overflow-y:hidden;scrollbar-width:none;flex:0 1 40px!important;min-height:0}
+.pwho::-webkit-scrollbar{display:none}
+.pwho:empty::before{content:'Ingen har svart ennå';font:500 12px/26px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--soft)}
+.pwho .face{width:26px;height:26px;animation:pop .35s cubic-bezier(.2,1.6,.4,1) both}
 .who .face{width:26px;height:26px;animation:pop .35s cubic-bezier(.2,1.6,.4,1) both}
 .rows .nm{font-weight:500;font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .players{background:var(--cell);padding:14px var(--pad);display:flex;flex-wrap:wrap;gap:10px 16px;flex:1 1 auto!important;min-height:96px;overflow-y:auto;align-content:flex-start}
@@ -118,6 +122,7 @@ input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px soli
 .hero.keep{flex:1 0 clamp(150px,30dvh,300px)!important}
 @media (max-height:740px){.hero.keep{flex-basis:clamp(160px,30dvh,210px)!important}}
 @media (max-height:600px){.hero.keep{flex-basis:150px!important}}
+@media (max-height:600px){.pwho{display:none}}
 .locked{opacity:.35;pointer-events:none}
 .qrow{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
 .pop .disc{animation:pop .55s cubic-bezier(.2,1.6,.4,1) both}
@@ -269,7 +274,7 @@ function host(){
     const q = H.qs && H.qs[H.qi];
     if (H.phase === 'lobby') return { ph:'lobby' };
     if (H.phase === 'question') return { ph:'q', qi:H.qi, n:H.qs.length, q:q.q, opts:q.opts || [], num:q.num != null ? 1 : 0, round:q.round || '', secs:H.secs,
-      left:Math.max(0, H.qStart + H.secs*1000 - Date.now()), open:Math.max(0, H.qStart - Date.now()), a:Object.keys(H.ans).length, pn:ids().length };
+      left:Math.max(0, H.qStart + H.secs*1000 - Date.now()), open:Math.max(0, H.qStart - Date.now()), a:Object.keys(H.ans).length, pn:ids().length, w:whoAv() };
     if (H.phase === 'reveal') return q.num != null
       ? { ph:'r', qi:H.qi, n:H.qs.length, num:1, ans:fmt(q.num), ex:q.ex || '', res:H.res }
       : { ph:'r', qi:H.qi, n:H.qs.length, correct:q.correct, ans:q.opts[q.correct], ex:q.ex || '', res:H.res, top:ranked().map(id => [H.players[id].av, H.players[id].name, H.players[id].score]) };
@@ -278,13 +283,14 @@ function host(){
   }
   // re: host was away and may have missed answers, so players re-send theirs
   function send(re){ if (out) out.send({ type:'broadcast', event:'state', payload:{ ...msg(), g:H.gid, ...(re ? { re:1 } : {}) } }); }
+  const whoAv = () => Object.keys(H.ans).map(id => H.players[id] && H.players[id].av).filter(Boolean);
   // Antal svar till spelarna, högst var 2:a sekund (håller trafiken nere med 90 spelare)
   let cntT = null, cntLast = -1;
   function pushCnt(){
     if (cntT) return;
     cntT = setTimeout(() => {
       cntT = null; const a = Object.keys(H.ans).length;
-      if (out && H.phase === 'question' && a !== cntLast) { cntLast = a; out.send({ type:'broadcast', event:'cnt', payload:{ g:H.gid, qi:H.qi, a, n:ids().length } }); }
+      if (out && H.phase === 'question' && a !== cntLast) { cntLast = a; out.send({ type:'broadcast', event:'cnt', payload:{ g:H.gid, qi:H.qi, a, n:ids().length, w:whoAv() } }); }
     }, 2000);
   }
   function reb(){ if (rebT) return; rebT = setTimeout(() => { rebT = null; send(); }, 3000); }
@@ -619,7 +625,7 @@ function player(){
       })
       .on('broadcast', { event:'cnt' }, ({payload:c}) => {
         if (cur.ph !== 'q' || c.g !== cur.g || c.qi !== cur.qi) return;
-        cur.a = c.a; cur.pn = c.n; const el = $('#acnt'); if (el) el.textContent = cntTxt();
+        cur.a = c.a; cur.pn = c.n; cur.w = c.w || cur.w; const el = $('#acnt'); if (el) el.textContent = cntTxt(); showWho();
       })
       .subscribe(s => {
         setStatus(s === 'SUBSCRIBED');
@@ -630,6 +636,15 @@ function player(){
 
   // Nedräkning hos spelaren: sluttiden räknas från när frågan kom fram
   let endAt = 0, openAt = 0, clockT = null, fxDone = '';
+  // Robotarna som har svarat; bara nya läggs till, så listan inte ritas om varannan sekund
+  function showWho(){
+    const el = $('#pwho'); if (!el) return;
+    const w = cur.w || [], have = el.children.length;
+    if (have > w.length) el.innerHTML = '';
+    // Nyaste först, så att man ser dem komma in
+    el.insertAdjacentHTML('afterbegin', w.slice(el.children.length).reverse().map(av => face(av)).join(''));
+    el.scrollLeft = 0;
+  }
   const cntTxt = () => (cur.a || 0) + '/' + (cur.pn || '–') + ' har svart';
   function clock(){
     clearInterval(clockT);
@@ -683,11 +698,13 @@ function player(){
         const c = A.c;
         app.innerHTML = `${head('spørsmål ' + pad(cur.qi+1) + '/' + pad(cur.n))}
           <div class="hero"><span class="k">Ditt svar</span>${cur.num ? `<div class="disc ring"><b class="small">${fmt(c)}</b></div>` : `<div class="disc ${c === 0 || c === 2 ? '' : 'light'}" style="--c:var(--o${'abcd'[c] || 'a'});--a:${KNOB[c] || '180deg'}"><b>${L[c] || ''}</b></div>`}</div>
-          <div class="band"><div class="qrow"><div style="display:flex;flex-direction:column;gap:10px"><span class="k">Sendt · <span id="acnt">${cntTxt()}</span></span><span class="q">Venter på riktig svar.</span></div>${clockHtml()}</div></div>`;
-        return clock();
+          <div class="band"><div class="qrow"><div style="display:flex;flex-direction:column;gap:10px"><span class="k">Sendt · <span id="acnt">${cntTxt()}</span></span><span class="q">Venter på riktig svar.</span></div>${clockHtml()}</div></div>
+          <div class="who" id="pwho"></div>`;
+        showWho(); return clock();
       }
       const qband = `<div class="band"><div class="krow"><span class="k" id="rd">${esc(cur.round || '')}</span><span class="k" id="acnt">${cntTxt()}</span></div><div class="qrow"><span class="q${cur.q.length > 70 ? ' long' : ''}">${esc(cur.q)}</span>${clockHtml()}</div></div>
-        <div class="bar"><i id="bar"></i></div>`;
+        <div class="bar"><i id="bar"></i></div>
+        <div class="pwho" id="pwho"></div>`;
       if (cur.num) {
         // Utslagsfråga: skriv ett tal på knappsatsen
         let v = '';
@@ -711,7 +728,7 @@ function player(){
       bar.offsetWidth;
       bar.style.transition = 'transform ' + left + 'ms linear ' + open + 'ms';
       bar.style.transform = 'scaleX(0)';
-      clock();
+      showWho(); clock();
     }
     else if (cur.ph === 'r') {
       const r = cur.res && cur.res[me.id];
