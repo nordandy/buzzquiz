@@ -42,7 +42,7 @@ body{background:var(--bg);color:var(--ink);font:400 16px/1.4 var(--sans);padding
 .q{font-weight:500;font-size:clamp(24px,6.6vw,30px);line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
 .digits{font:400 clamp(60px,19vw,92px)/1 var(--mono);letter-spacing:.04em}
 .hero{container-type:size;background:var(--cell);flex:1 0 0!important;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:0 var(--pad);position:relative;overflow:hidden}
-@container (max-height:180px){.hero>*{display:none}}
+@container (max-height:130px){.hero>*{display:none!important}}
 .hero .k{position:absolute;top:16px;left:var(--pad)}
 .disc{--c:var(--sig);--p:1;--d:min(64vw,34dvh,280px,calc(100cqh - 72px));width:var(--d);margin-top:16px;aspect-ratio:1;border-radius:50%;position:relative;display:grid;place-items:center;flex:none;
   background:conic-gradient(var(--c) calc(var(--p)*1turn),transparent 0);box-shadow:inset 0 0 0 1px var(--line)}
@@ -98,6 +98,10 @@ button.cell[aria-pressed=true]{background:var(--press);box-shadow:inset 0 0 0 2p
 .rows div{background:var(--cell);display:grid;grid-template-columns:30px 26px minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px var(--pad);min-height:50px}
 .rows .i{font:400 14px/1 var(--mono);color:var(--soft)}
 .rows .s{font:400 16px/1 var(--mono)}
+.rows .me{background:var(--press);box-shadow:inset 3px 0 0 var(--sig)}
+.who{background:var(--cell);padding:10px var(--pad);display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;flex:0 1 auto!important;min-height:0;max-height:24dvh;overflow-y:auto}
+.who:empty{display:none}
+.who .face{width:26px;height:26px;animation:pop .35s cubic-bezier(.2,1.6,.4,1) both}
 .rows .nm{font-weight:500;font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .players{background:var(--cell);padding:14px var(--pad);display:flex;flex-wrap:wrap;gap:10px 16px;flex:1 1 auto!important;min-height:96px;overflow-y:auto;align-content:flex-start}
 .players span{display:flex;align-items:center;gap:7px;font-size:16px}
@@ -113,7 +117,7 @@ input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px soli
 .krow{display:flex;justify-content:space-between;gap:12px}
 .hero.keep{flex:1 0 clamp(150px,30dvh,300px)!important}
 @media (max-height:740px){.hero.keep{flex-basis:clamp(160px,30dvh,210px)!important}}
-@media (max-height:600px){.hero.keep{flex-basis:140px!important}}
+@media (max-height:600px){.hero.keep{flex-basis:150px!important}}
 .locked{opacity:.35;pointer-events:none}
 .qrow{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
 .pop .disc{animation:pop .55s cubic-bezier(.2,1.6,.4,1) both}
@@ -189,7 +193,7 @@ const clockHtml = () => `<span class="clock" aria-label="Sekunder igjen"><i clas
 // Svar med ett ord längre än 13 tecken visas i en kolumn, så att ordet inte bryts mitt i
 const cols = opts => opts.some(o => o.split(/\s+/).some(w => w.length > 13)) ? ' one' : '';
 const fmt = n => n == null || n === '' ? '–' : Number(n).toLocaleString('nb-NO');
-const rows = list => `<div class="rows">${list.map(([av, name, score], i) => `<div><span class="i">${pad(i+1)}</span>${face(av, 'sm')}<span class="nm">${esc(name)}</span><span class="s">${score}</span></div>`).join('')}</div>`;
+const rows = (list, me = -1) => `<div class="rows">${list.map(([av, name, score], i) => `<div${i === me ? ' class="me"' : ''}><span class="i">${pad(i+1)}</span>${face(av, 'sm')}<span class="nm">${esc(name)}</span><span class="s">${score}</span></div>`).join('')}</div>`;
 const EXAMPLE = 'Hva heter Sveriges hovedstad?\n*Stockholm\nGöteborg\nMalmö\nUppsala\n\nHvor mange sider har en oktogon?\n6\n*8\n10\n12';
 // Testquiz om Stockholm, laddas i testläge.
 const TEST = [
@@ -268,8 +272,8 @@ function host(){
       left:Math.max(0, H.qStart + H.secs*1000 - Date.now()), open:Math.max(0, H.qStart - Date.now()), a:Object.keys(H.ans).length, pn:ids().length };
     if (H.phase === 'reveal') return q.num != null
       ? { ph:'r', qi:H.qi, n:H.qs.length, num:1, ans:fmt(q.num), ex:q.ex || '', res:H.res }
-      : { ph:'r', qi:H.qi, n:H.qs.length, correct:q.correct, ans:q.opts[q.correct], ex:q.ex || '', res:H.res, top:ranked().slice(0,5).map(id => [H.players[id].av, H.players[id].name, H.players[id].score]) };
-    if (H.phase === 'end') return { ph:'end', res:H.res, n:ids().length, top:ranked().slice(0,5).map(id => [H.players[id].av, H.players[id].name, H.players[id].score]) };
+      : { ph:'r', qi:H.qi, n:H.qs.length, correct:q.correct, ans:q.opts[q.correct], ex:q.ex || '', res:H.res, top:ranked().map(id => [H.players[id].av, H.players[id].name, H.players[id].score]) };
+    if (H.phase === 'end') return { ph:'end', res:H.res, n:ids().length, top:ranked().map(id => [H.players[id].av, H.players[id].name, H.players[id].score]) };
     return { ph:'lobby' };
   }
   // re: host was away and may have missed answers, so players re-send theirs
@@ -302,6 +306,7 @@ function host(){
     save();
     const n = Object.keys(H.ans).length;
     const el = $('#cnt'); if (el) el.textContent = n + '/' + ids().length;
+    const who = $('#who'); if (who) who.insertAdjacentHTML('beforeend', face(H.players[p.id].av));
     if (n >= ids().length) reveal(); else pushCnt();
   }
 
@@ -346,6 +351,9 @@ function host(){
     save(); connect(); render();
   }
 
+  // Den lilla klockan i bandet visas när den stora skivan inte får plats (t.ex. när avatarerna fyller på)
+  function syncClock(){ const d = $('#disc'), c = $('.band .clock'); if (d && c) c.style.display = d.offsetWidth ? 'none' : ''; }
+
   function startQ(i){
     // qStart = när svaren öppnar; tiden före är lästid
     cntLast = -1;
@@ -360,6 +368,7 @@ function host(){
       const rd = $('#rd'); if (rd) rd.textContent = reading ? 'Les spørsmålet · svar åpner om ' + sec : (H.qs[H.qi].round || 'Svar nå');
       const el = $('#disc'); if (el) { el.style.setProperty('--p', f); el.firstChild.textContent = pad(sec); }
       const pie = $('#pie'); if (pie) { pie.style.setProperty('--p', f); $('#sec').textContent = sec; }
+      syncClock();
       if (left <= 0) reveal();
     }, 250);
   }
@@ -454,6 +463,7 @@ function host(){
         <div class="band"><span class="k" id="rd">${esc(q.round || '')}</span><div class="qrow"><span class="q${q.q.length > 70 ? ' long' : ''}">${esc(q.q)}</span>${clockHtml()}</div></div>
         ${q.num != null ? `<div class="grid"><div class="cell wide slim"><span class="k">Svar med et tall · nærmest vinner</span></div></div>`
           : `<div class="grid mini">${q.opts.map((o,i) => `<div class="cell ans">${adot(i)}<span class="k">${L[i]}</span><span class="t">${esc(o)}</span></div>`).join('')}</div>`}
+        <div class="who" id="who" aria-label="Har svart">${Object.keys(H.ans).map(id => face(H.players[id].av)).join('')}</div>
         <div class="grid act">
           <div class="cell"><span class="k">Svar</span><span class="num" id="cnt">${Object.keys(H.ans).length}/${ids().length}</span></div>
           <button class="cell go" id="rev"><span class="k">Stopp tiden</span><span class="v">Vis svar →</span></button>
@@ -467,8 +477,7 @@ function host(){
         armed = setTimeout(() => { armed = null; const b = $('#rev'); if (b) { b.innerHTML = '<span class="k">Stopp tiden</span><span class="v">Vis svar →</span>'; b.style.background = ''; } }, 3000);
       };
       $('#sec').textContent = Math.ceil(Math.min(left, H.secs*1000)/1000); $('#pie').style.setProperty('--p', Math.min(1, left/(H.secs*1000)));
-      // Syns den stora skivan behövs inte den lilla klockan i bandet
-      if ($('#disc').offsetWidth) $('.band .clock').style.display = 'none';
+      syncClock();
     }
     else if (H.phase === 'reveal' && q.num != null) {
       const last = H.qi + 1 >= H.qs.length;
@@ -657,6 +666,9 @@ function player(){
     render();
   }
 
+  // Scrolla topplistan så att den egna raden syns
+  const showMe = () => { const l = $('.rows'), m = $('.rows .me'); if (l && m) l.scrollTop = m.offsetTop - l.offsetTop - l.clientHeight / 2 + m.offsetHeight / 2; };
+
   function render(){
     if (cur.ph === 'lobby') {
       app.innerHTML = `${head(roomLbl)}
@@ -726,15 +738,17 @@ function player(){
           <div class="cell"><span class="k">Totalt</span><span class="num">${r[1]}</span></div>
           <div class="cell"><span class="k">Plass</span><span class="num">${pad(r[2])}</span></div>
         </div>
-        ${cur.top ? `<div class="band" style="padding-block:10px"><span class="k">Stilling · ${gap}</span></div>${rows(cur.top)}` : ''}`;
+        ${cur.top ? `<div class="band" style="padding-block:10px"><span class="k">Stilling · ${gap}</span></div>${rows(cur.top, r[2] - 1)}` : ''}`;
+      showMe();
       if (fxDone !== cur.g + ':' + cur.qi) { fxDone = cur.g + ':' + cur.qi; $('#hero').classList.add(ok ? 'pop' : 'shake'); fx(ok); }
     }
     else if (cur.ph === 'end') {
       const r = cur.res && cur.res[me.id];
       app.innerHTML = `${head('resultat')}
-        <div class="hero"><span class="k">Plass</span><div class="disc ${r && r[2] <= 3 ? '' : 'ring'}"><b>${r ? pad(r[2]) : '–'}</b></div></div>
+        <div class="hero keep"><span class="k">Plass</span><div class="disc ${r && r[2] <= 3 ? '' : 'ring'}"><b>${r ? pad(r[2]) : '–'}</b></div></div>
         <div class="band"><span class="k">${r ? 'av ' + cur.n + ' spillere' : 'Quizen er ferdig'}</span><span class="q">${r ? r[1] + ' poeng' : 'Takk for at du spilte.'}</span></div>
-        ${cur.top ? rows(cur.top) : ''}`;
+        ${cur.top ? rows(cur.top, r ? r[2] - 1 : -1) : ''}`;
+      showMe();
     }
   }
 }
