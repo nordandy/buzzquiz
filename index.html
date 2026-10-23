@@ -47,6 +47,9 @@ button.ghost{background:transparent;color:var(--soft);border:2px solid var(--lin
 .center{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:14px;border-radius:16px;padding:20px}
 .center.o0,.center.o3{color:#fff}
 .av{font-size:80px;line-height:1}
+.ans{background:#fff;color:#16243A;border-radius:12px;padding:12px 16px;font-weight:800;font-size:20px;display:flex;gap:10px;align-items:center;justify-content:center;width:100%;max-width:420px}
+.center .list{width:100%;max-width:420px}
+.center .list div{color:var(--ink)}
 .err{color:var(--a);font-weight:700}
 #qr{background:#fff;padding:12px;border-radius:12px}
 #qr img,#qr canvas{width:190px;height:190px;display:block}
@@ -78,6 +81,12 @@ const ls = {
 };
 const setStatus = ok => { statusEl.textContent = ok ? '' : 'Ansluter…'; };
 const base = location.origin + location.pathname;
+let wake = null;
+async function keepAwake(){
+  if (document.visibilityState !== 'visible' || wake || !navigator.wakeLock) return;
+  try { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } catch(e){}
+}
+document.addEventListener('visibilitychange', keepAwake);
 
 Q.has('host') ? host() : player();
 
@@ -102,8 +111,8 @@ function host(){
     const q = H.qs && H.qs[H.qi];
     if (H.phase === 'lobby') return { ph:'lobby' };
     if (H.phase === 'question') return { ph:'q', qi:H.qi, n:H.qs.length, q:q.q, opts:q.opts, secs:H.secs, left:Math.max(0, H.qStart + H.secs*1000 - Date.now()) };
-    if (H.phase === 'reveal') return { ph:'r', qi:H.qi, correct:q.correct, res:H.res };
-    if (H.phase === 'end') return { ph:'end', res:H.res, n:ids().length };
+    if (H.phase === 'reveal') return { ph:'r', qi:H.qi, correct:q.correct, ans:q.opts[q.correct], res:H.res };
+    if (H.phase === 'end') return { ph:'end', res:H.res, n:ids().length, top:ranked().slice(0,5).map(id => [H.players[id].av, H.players[id].name, H.players[id].score]) };
     return { ph:'lobby' };
   }
   function send(){ if (out) out.send({ type:'broadcast', event:'state', payload:msg() }); }
@@ -209,13 +218,14 @@ function host(){
       const link = base + '?r=' + H.code, n = ids().length;
       app.innerHTML = `
         <div class="row spread" style="align-items:flex-start">
-          <div><p class="soft">Gå till länken eller skanna koden</p><div class="code">${H.code}</div><p style="word-break:break-all">${esc(link)}</p></div>
+          <div><p class="soft">Gå till länken eller skanna koden</p><div class="code">${H.code}</div><p style="word-break:break-all">${esc(link)}</p>${navigator.share ? '<button class="ghost" id="sh">Dela länken</button>' : ''}</div>
           <div id="qr"></div>
         </div>
         <div class="row spread"><h1>${n} spelare</h1><button id="start" ${n ? '' : 'disabled'}>Starta quizet</button></div>
         <div class="players">${ids().map(id => `<span class="chip">${H.players[id].av} ${esc(H.players[id].name)}</span>`).join('')}</div>
         <div><button class="ghost" id="x">Avsluta</button></div>`;
       try { new QRCode($('#qr'), { text:link, width:190, height:190 }); } catch(e){ $('#qr').remove(); }
+      if ($('#sh')) $('#sh').onclick = () => navigator.share({ title:'Quiz', text:'Gå med i quizet, kod ' + H.code, url:link }).catch(() => {});
       $('#start').onclick = () => startQ(0);
       $('#x').onclick = () => reset(true);
     }
@@ -248,6 +258,8 @@ function host(){
     }
   }
 
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && H.phase !== 'setup') send(); });
+  keepAwake();
   if (H.phase !== 'setup') { connect(); if (H.phase === 'question') tick(); }
   render();
 }
@@ -302,10 +314,15 @@ function player(){
   }
 
   function join(){
+    keepAwake();
     sb.removeAllChannels();
     inn = sb.channel('q-' + code + '-in');
     sb.channel('q-' + code + '-out')
-      .on('broadcast', { event:'state' }, ({payload}) => { cur = payload; render(); })
+      .on('broadcast', { event:'state' }, ({payload}) => {
+        cur = payload; render();
+        const mine = ls.get(ak + '-c');
+        if (cur.ph === 'q' && answered === cur.qi && mine != null) sendIn('answer', { id:me.id, qi:cur.qi, c:mine });
+      })
       .subscribe(s => {
         setStatus(s === 'SUBSCRIBED');
         if (s === 'SUBSCRIBED') sendIn('join', { id:me.id, name:me.name, av:me.av });
@@ -314,7 +331,7 @@ function player(){
   }
 
   function answer(c){
-    answered = cur.qi; ls.set(ak, answered);
+    answered = cur.qi; ls.set(ak, answered); ls.set(ak + '-c', c);
     sendIn('answer', { id:me.id, qi:cur.qi, c });
     render();
   }
@@ -351,6 +368,7 @@ function player(){
       app.innerHTML = `<div class="center ${ok ? 'o3' : 'o0'}">
         <h1 style="font-size:64px">${ok ? 'Rätt!' : (answered === cur.qi ? 'Fel' : 'Inget svar')}</h1>
         ${ok ? `<p class="big" style="font-size:40px">+${r[0]}</p>` : ''}
+        ${ok ? '' : `<p class="soft" style="color:inherit;opacity:.85">Rätt svar</p><div class="ans"><span style="color:var(--${'abcd'[cur.correct]})">${SH[cur.correct]}</span>${esc(cur.ans)}</div>`}
         <p>${r[1]} poäng totalt</p><p class="big" style="font-size:28px">Plats ${r[2]}</p></div>`;
     }
     else if (cur.ph === 'end') {
@@ -359,6 +377,7 @@ function player(){
         <div class="av">${r && r[2] <= 3 ? ['🥇','🥈','🥉'][r[2]-1] : me.av}</div>
         <h1>${r ? 'Plats ' + r[2] + ' av ' + cur.n : 'Quizet är slut'}</h1>
         ${r ? `<p class="big" style="font-size:32px">${r[1]} poäng</p>` : ''}
+        ${cur.top ? `<div class="list">${cur.top.map((t,i) => `<div><span>${['🥇','🥈','🥉'][i] || (i+1)+'.'} ${t[0]} ${esc(t[1])}</span><span>${t[2]}</span></div>`).join('')}</div>` : ''}
         <p class="soft">Tack för att du spelade!</p></div>`;
     }
   }
