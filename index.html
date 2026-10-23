@@ -160,6 +160,8 @@ function host(){
   const save = () => ls.set('quiz-host', H);
   const ids = () => Object.keys(H.players || {});
   const ranked = () => ids().sort((a,b) => H.players[b].score - H.players[a].score);
+  // Rumskoder i följd: 0001, 0002 … Värden kan skriva en egen.
+  const nextRoom = () => String((ls.get('quiz-last') || 0) % 9999 + 1).padStart(4, '0');
 
   function connect(){
     out = sb.channel('q-' + H.code + '-out');
@@ -179,7 +181,7 @@ function host(){
     return { ph:'lobby' };
   }
   // re: host was away and may have missed answers, so players re-send theirs
-  function send(re){ if (out) out.send({ type:'broadcast', event:'state', payload:{ ...msg(), ...(re ? { re:1 } : {}) } }); }
+  function send(re){ if (out) out.send({ type:'broadcast', event:'state', payload:{ ...msg(), g:H.gid, ...(re ? { re:1 } : {}) } }); }
   function reb(){ if (rebT) return; rebT = setTimeout(() => { rebT = null; send(); }, 3000); }
 
   function onJoin(p){
@@ -218,8 +220,12 @@ function host(){
 
   function create(){
     const { qs, errs } = parse(H.text);
+    const room = ($('#rc').value || '').replace(/\D/g, '');
+    if (!/^\d{4}$/.test(room) || room === '0000') errs.push('Rumskoden ska vara fyra siffror, 0001–9999.');
     if (errs.length) { $('#e').textContent = errs.join(' '); return; }
-    Object.assign(H, { qs, code:String(Math.floor(1000 + Math.random()*9000)), players:{}, ans:{}, phase:'lobby', qi:0 });
+    ls.set('quiz-last', Number(room));
+    // gid skiljer omgångar åt när samma kod används igen
+    Object.assign(H, { qs, code:room, gid:Math.random().toString(36).slice(2,8), players:{}, ans:{}, phase:'lobby', qi:0 });
     save(); connect(); render();
   }
 
@@ -273,9 +279,10 @@ function host(){
           <button class="cell" id="dn" aria-label="Färre sekunder"><span class="k">Tid</span><span class="num">−</span></button>
           <div class="cell"><span class="k">Sek/fråga</span><span class="num" id="s">${H.secs}</span></div>
           <button class="cell" id="up" aria-label="Fler sekunder"><span class="k">&nbsp;</span><span class="num">+</span></button>
-          <button class="cell go wide" id="go"><span class="k">Klar</span><span class="v">Skapa rum →</span><span class="err" id="e"></span></button>
+          <label class="cell" style="grid-column:span 2"><span class="k">Rumskod</span><input id="rc" class="num" inputmode="numeric" maxlength="4" autocomplete="off" aria-label="Rumskod"><span class="err" id="e"></span></label>
+          <button class="cell go" id="go"><span class="k">Klar</span><span class="v">Skapa rum →</span></button>
         </div>`;
-      $('#t').value = H.text;
+      $('#t').value = H.text; $('#rc').value = nextRoom();
       $('#t').oninput = e => { H.text = e.target.value; save(); };
       const step = d => { H.secs = Math.min(120, Math.max(5, H.secs + d)); $('#s').textContent = H.secs; save(); };
       $('#dn').onclick = () => step(-5); $('#up').onclick = () => step(5);
@@ -353,7 +360,10 @@ function player(){
   ls.set('quiz-me', me);
   let inn, cur = { ph:'lobby' };
   const ak = 'quiz-ans-' + code;
-  let answered = ls.get(ak) ?? -1;
+  // Senaste svaret i det här rummet: { g: spel-id, qi: fråga, c: val }
+  let A = ls.get(ak), lastG = null;
+  if (!A || typeof A !== 'object') A = null;
+  const did = () => !!A && A.g === cur.g && A.qi === cur.qi;
 
   if (!code) return askCode();
   if (me.name && ls.get('quiz-room') === code) join(); else form();
@@ -413,8 +423,9 @@ function player(){
     sb.channel('q-' + code + '-out')
       .on('broadcast', { event:'state' }, ({payload}) => {
         cur = payload; render();
-        const mine = ls.get(ak + '-c');
-        if (cur.ph === 'q' && cur.re && answered === cur.qi && mine != null) sendIn('answer', { id:me.id, qi:cur.qi, c:mine });
+        // Nytt spel på samma kod (eller värden startade efter oss): anmäl dig igen
+        if (cur.g && cur.g !== lastG) { lastG = cur.g; sendIn('join', { id:me.id, name:me.name, av:me.av }); }
+        if (cur.ph === 'q' && cur.re && did()) sendIn('answer', { id:me.id, qi:cur.qi, c:A.c });
       })
       .subscribe(s => {
         setStatus(s === 'SUBSCRIBED');
@@ -424,7 +435,7 @@ function player(){
   }
 
   function answer(c){
-    answered = cur.qi; ls.set(ak, answered); ls.set(ak + '-c', c);
+    A = { g:cur.g, qi:cur.qi, c }; ls.set(ak, A);
     sendIn('answer', { id:me.id, qi:cur.qi, c });
     render();
   }
@@ -438,8 +449,8 @@ function player(){
       $('#ch').onclick = form;
     }
     else if (cur.ph === 'q') {
-      if (answered === cur.qi) {
-        const c = ls.get(ak + '-c');
+      if (did()) {
+        const c = A.c;
         app.innerHTML = `${head('fråga ' + pad(cur.qi+1) + '/' + pad(cur.n))}
           <div class="hero"><span class="k">Ditt svar</span><div class="disc ${c === 0 || c === 2 ? '' : 'light'}" style="--c:var(--o${'abcd'[c] || 'a'})"><b>${L[c] || ''}</b></div></div>
           <div class="band"><span class="k">Skickat</span><span class="q">Väntar på rätt svar.</span></div>`;
@@ -462,7 +473,7 @@ function player(){
       const ok = r[0] > 0;
       app.innerHTML = `${head('fråga ' + pad(cur.qi+1) + ' · facit')}
         <div class="hero"><span class="k">${ok ? 'Poäng' : 'Missat'}</span><div class="disc ${ok ? '' : 'ring'}"><b>${ok ? '+' + r[0] : '0'}</b></div></div>
-        <div class="band"><span class="k">${ok ? 'Rätt' : (answered === cur.qi ? 'Fel' : 'Inget svar')}</span>
+        <div class="band"><span class="k">${ok ? 'Rätt' : (did() ? 'Fel' : 'Inget svar')}</span>
           <span class="row" style="gap:12px">${adot(cur.correct)}<span class="q">${esc(cur.ans)}</span></span></div>
         <div class="grid">
           <div class="cell"><span class="k">Totalt</span><span class="num">${r[1]}</span></div>
