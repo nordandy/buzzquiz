@@ -19,7 +19,7 @@
 *{box-sizing:border-box;margin:0}
 html,body{height:100%}
 body{background:var(--bg);color:var(--ink);font:400 16px/1.4 var(--sans);padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);-webkit-tap-highlight-color:transparent;overflow:hidden}
-#app{max-width:520px;margin:0 auto;height:100%;display:flex;flex-direction:column;gap:1px;background:var(--line);border-inline:1px solid var(--line);overflow-y:auto}
+#app{max-width:520px;margin:0 auto;height:100%;overflow-x:hidden;display:flex;flex-direction:column;gap:1px;background:var(--line);border-inline:1px solid var(--line);overflow-y:auto}
 #app>*{flex-shrink:0}
 .k{font:500 12px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--soft)}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--cell);min-height:46px;padding:0 max(var(--pad),env(safe-area-inset-right,0px)) 0 max(var(--pad),env(safe-area-inset-left,0px))}
@@ -35,12 +35,14 @@ body{background:var(--bg);color:var(--ink);font:400 16px/1.4 var(--sans);padding
 .band p{font-size:17px;line-height:1.45}
 .band .ex{font-size:16px;line-height:1.45;color:#C9C9C4;max-width:60ch}
 .band .link{font:400 13px/1.4 var(--mono);color:var(--band-soft);word-break:break-all}
+.q,.t,.ex,.band p{overflow-wrap:anywhere;hyphens:auto;-webkit-hyphens:auto}
+.cell{min-width:0}
 .q.long{font-size:clamp(21px,5.6vw,25px)}
 .disc b.small{font-size:calc(var(--d) * .15)}
 .q{font-weight:500;font-size:clamp(24px,6.6vw,30px);line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
 .digits{font:400 clamp(60px,19vw,92px)/1 var(--mono);letter-spacing:.04em}
 .hero{container-type:size;background:var(--cell);flex:1 0 0!important;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:0 var(--pad);position:relative;overflow:hidden}
-@container (max-height:130px){.hero>*{display:none}}
+@container (max-height:180px){.hero>*{display:none}}
 .hero .k{position:absolute;top:16px;left:var(--pad)}
 .disc{--c:var(--sig);--p:1;--d:min(64vw,34dvh,280px,calc(100cqh - 72px));width:var(--d);margin-top:16px;aspect-ratio:1;border-radius:50%;position:relative;display:grid;place-items:center;flex:none;
   background:conic-gradient(var(--c) calc(var(--p)*1turn),transparent 0);box-shadow:inset 0 0 0 1px var(--line)}
@@ -49,8 +51,13 @@ body{background:var(--bg);color:var(--ink);font:400 16px/1.4 var(--sans);padding
 .disc b{font:400 calc(var(--d) * .24)/1 var(--mono);color:var(--ink)}
 .disc.light b{color:#fff}
 .disc.light::after{background:#fff}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
-.grid.g3{grid-template-columns:repeat(3,1fr)}.grid.g4{grid-template-columns:repeat(4,1fr)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line)}
+.grid.one{grid-template-columns:minmax(0,1fr)}
+.grid.one .cell.ans{min-height:0;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px;padding-block:10px}
+.grid.one .ans .row{flex:none}
+.grid.one .ans .t{font-size:clamp(17px,4.8vw,20px)}
+.grid.one .ans .n{order:3;margin-left:auto}
+.grid.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
 .fill{flex:1 1 auto!important;grid-auto-rows:1fr;min-height:0}
 .cell{background:var(--cell);padding:14px var(--pad);min-height:72px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;text-align:left;color:var(--ink);font:inherit;border:0;border-radius:0;position:relative}
 button.cell{cursor:pointer;touch-action:manipulation}
@@ -81,7 +88,7 @@ button.cell:disabled{color:var(--soft);cursor:default}
 .swatch{align-items:center;justify-content:center;min-height:0;padding:10px}
 button.cell[aria-pressed=true]{background:var(--press);box-shadow:inset 0 0 0 2px var(--ink)}
 .rows{display:flex;flex-direction:column;gap:1px;background:var(--line);flex:0 1 auto!important;min-height:0;overflow-y:auto}
-.rows div{background:var(--cell);display:grid;grid-template-columns:30px 26px 1fr auto;align-items:center;gap:10px;padding:12px var(--pad);min-height:50px}
+.rows div{background:var(--cell);display:grid;grid-template-columns:30px 26px minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px var(--pad);min-height:50px}
 .rows .i{font:400 14px/1 var(--mono);color:var(--soft)}
 .rows .s{font:400 16px/1 var(--mono)}
 .rows .nm{font-weight:500;font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -99,6 +106,7 @@ input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px soli
 .krow{display:flex;justify-content:space-between;gap:12px}
 .hero.keep{flex:1 0 clamp(150px,30dvh,300px)!important}
 @media (max-height:740px){.hero.keep{flex-basis:clamp(160px,30dvh,210px)!important}}
+@media (max-height:600px){.hero.keep{flex-basis:140px!important}}
 .locked{opacity:.35;pointer-events:none}
 .qrow{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
 .pop .disc{animation:pop .55s cubic-bezier(.2,1.6,.4,1) both}
@@ -170,6 +178,8 @@ const mark = (cls = '') => `<div class="mark ${cls}"><img src="${LOGO_PNG}" alt=
 const adot = (i, cls = '') => `<i class="dot ${cls}" style="--c:var(--o${'abcd'[i]})"></i>`;
 const pad = n => String(n).padStart(2, '0');
 const clockHtml = () => `<span class="clock" aria-label="Sekunder kvar"><i class="pie" id="pie"></i><b id="sec"></b></span>`;
+// Svar med ett ord längre än 13 tecken visas i en kolumn, så att ordet inte bryts mitt i
+const cols = opts => opts.some(o => o.split(/\s+/).some(w => w.length > 13)) ? ' one' : '';
 const fmt = n => n == null || n === '' ? '–' : Number(n).toLocaleString('sv-SE');
 const rows = list => `<div class="rows">${list.map(([av, name, score], i) => `<div><span class="i">${pad(i+1)}</span>${face(av, 'sm')}<span class="nm">${esc(name)}</span><span class="s">${score}</span></div>`).join('')}</div>`;
 const EXAMPLE = 'Vad heter Sveriges huvudstad?\n*Stockholm\nGöteborg\nMalmö\nUppsala\n\nHur många sidor har en oktagon?\n6\n*8\n10\n12';
@@ -184,8 +194,8 @@ const TEST = [
 // DDG-quizet. Öppnas med ?host=test (rum 0010) eller ?host=live (rum 2026).
 const DDG = "# Runde 1 · Svenske ord\n\nEn svensk kollega sier at hotellrommet er «mysigt». Hva mener hun?\nDet er lite\n*Det er koselig\nDet er gammeldags\nDet er rotete\n> «Mysigt» betyr koselig. Svenskene bruker det om alt fra hyggelige kafeer til stemningen en mørk novemberkveld.\n\nDu blir bedt om å ta med en «skottkärra» til byggeplassen. Hva henter du?\n*En trillebår\nEn spade\nEn stige\nEn verktøykasse\n> «Skottkärra» er svensk for trillebår. Nyttig på byggeplassen, særlig hvis arkitekten plutselig må gjøre noe praktisk.\n\nHotellet ber deg ta av «örngottet». Hva skal du ta av?\nDynetrekket\nSengeteppet\n*Putetrekket\nOvermadrassen\n> «Örngott» betyr putetrekk. Ordet kommer fra eldre svensk og har ingenting med ørner å gjøre.\n\nEn svensk kollega inviterer deg på «gökotta». Hva innebærer det?\nÅ ta en øl før frokost\nÅ spise en ekstra stor frokost\n*Å stå tidlig opp for å høre fuglesang\nÅ ta en lur etter lunsj\n> Man står opp svært tidlig om våren for å høre gjøken, tradisjonelt på Kristi himmelfartsdag. Frister nok mer før enn etter en kveld på Fotografiska.\n\n# Runde 2 · Sverige\n\nHva står bokstavene IKEA for?\n*Ingvar Kamprad, Elmtaryd, Agunnaryd\nIndustri, Kvalitet, Enkelhet, Arkitektur\nIngvar Kamprad, Eksport, Almhult\nInteriør, Kjøkken, Eiendom, Arkitektur\n> Kamprad vokste opp på gården Elmtaryd ved Agunnaryd i Småland. Han grunnla IKEA i 1943, bare 17 år gammel.\n\nHvorfor sier svenskene «fönster», mens nordmenn sier «vindu»?\nOrdet kommer fra latin via fransk\n*Ordet kom fra tysk, blant annet gjennom hansahandelen\nSvenskene fant opp et nytt ord på 1800-tallet\nDet er opprinnelig et finsk ord\n> «Fönster» kom fra tysk «Fenster» (opprinnelig latin) med middelalderens handel. Norsk beholdt «vindu», fra norrønt «vindauga»: vindøye.\n\nI 1967 måtte hele Sverige endre en vane over natten. Hva skjedde?\n*Sverige gikk over til høyrekjøring\nSverige innførte sommertid\nSverige forbød røyking på tog\nSverige innførte metersystemet\n> «Dagen H», 3. september 1967: klokken fem om morgenen gikk all trafikk over til høyre side. Norge kjørte allerede på høyre, så svenskene kom omsider på rett side.\n\nÉn gang i historien har Sverige hatt en dato som ikke finnes i kalenderen vår. Hvilken?\n31. april\n32. desember\n*30. februar\n31. november\n> Sverige prøvde å gå gradvis over til den gregorianske kalenderen, men ga opp og la til 30. februar 1712 for å rette opp. Fullt over gikk landet først i 1753.\n\n# Runde 3 · Stockholm\n\nFotografiska, hvor vi skal spise middag, hadde opprinnelig en ganske annen funksjon. Hva var bygningen?\nEt fengsel\nEt bryggeri\n*Et tollhus\nEt marinesykehus\n> Fotografiska holder til i Stora Tullhuset, tegnet av Ferdinand Boberg og ferdig i 1910 som del av byens toll- og havnevirksomhet.\n\nTengbom, som vi besøker på fredag, står bak en av Stockholms mest kjente bygninger. Hvilken?\nStockholms stadshus\n*Stockholms konserthus\nStockholms slott\nStockholms stadsbibliotek\n> Ivar Tengbom tegnet Konserthuset ved Hötorget, ferdig i 1926. Her deles de fleste Nobelprisene ut. Kontoret ble grunnlagt i 1906 og fyller 120 år i år.\n\nAcne Studios holder til i en brutalistisk bygning fra den kalde krigen. Hva var bygningen opprinnelig?\nDet svenske kommunistpartiets hovedkvarter\n*Den tsjekkoslovakiske ambassaden\nDen svenske etterretningstjenestens hovedkontor\nEn sovjetisk handelsskole\n> Floragatan 13 ble tegnet av Jan Bočan og Jan Šrámek og sto ferdig i 1972. Rå betong fra den kalde krigen, i dag Acne Studios' hovedkontor.\n\nStockholms stadshus har en berømt «Blå hallen», hvor Nobelbanketten arrangeres. Hva er det merkelige med salen?\n*Den har aldri vært blå\nDen ble opprinnelig bygget som svømmehall\nDen ligger egentlig under bakken\nDen har ingen rette vinkler\n> Ragnar Östberg ville male salen blå, men ombestemte seg da han så de røde teglveggene. Navnet satt allerede. En arkitekt som endret mening uten å endre prosjektnavnet.\n\n# Utslagsspørsmål · nærmest vinner\n\nHvor mange tokens brente Andreas på å bygge quizappen?\n= 423789\n> Alt for at dere skulle slippe å opprette en Kahoot-konto.";
 const PRESET = { test:'0010', live:'2026' };
-// Frågan visas ensam i READ sekunder innan svaren öppnar (som i Kahoot)
-const READ = 4;
+// Lästid i sekunder innan svaren öppnar (0 = svara direkt)
+const READ = 0;
 // Rumskoder: 0001–0099 är testrum, 0100–9999 riktiga spel.
 const isTest = code => Number(code) < 100;
 
@@ -435,7 +445,7 @@ function host(){
         <div class="hero"><span class="k">Tid</span><div class="disc" id="disc" style="--p:${left/(H.secs*1000)}"><b>${pad(Math.ceil(left/1000))}</b></div></div>
         <div class="band"><span class="k" id="rd">${esc(q.round || '')}</span><div class="qrow"><span class="q${q.q.length > 70 ? ' long' : ''}">${esc(q.q)}</span>${clockHtml()}</div></div>
         ${q.num != null ? `<div class="grid"><div class="cell wide slim"><span class="k">Svaras med ett tal · närmast vinner</span></div></div>`
-          : `<div class="grid tight">${q.opts.map((o,i) => `<div class="cell ans${q.opts.length === 3 && i === 2 ? ' wide' : ''}"><span class="row">${adot(i)}<span class="k">${L[i]}</span></span><span class="t${o.length > 26 ? ' long' : ''}">${esc(o)}</span></div>`).join('')}</div>`}
+          : `<div class="grid tight${cols(q.opts)}">${q.opts.map((o,i) => `<div class="cell ans${q.opts.length === 3 && i === 2 ? ' wide' : ''}"><span class="row">${adot(i)}<span class="k">${L[i]}</span></span><span class="t${o.length > 26 ? ' long' : ''}">${esc(o)}</span></div>`).join('')}</div>`}
         <div class="grid act">
           <div class="cell"><span class="k">Svar</span><span class="num" id="cnt">${Object.keys(H.ans).length}/${ids().length}</span></div>
           <button class="cell go" id="rev"><span class="k">Stoppa tiden</span><span class="v">Visa svar →</span></button>
@@ -469,7 +479,7 @@ function host(){
       const last = H.qi + 1 >= H.qs.length;
       app.innerHTML = `${head('svar ' + pad(H.qi+1) + '/' + pad(H.qs.length))}
         <div class="band"><span class="k">Rätt svar: ${L[q.correct]}</span><span class="q${q.q.length > 70 ? ' long' : ''}">${esc(q.q)}</span>${q.ex ? `<p class="ex">${esc(q.ex)}</p>` : ''}</div>
-        <div class="grid">${q.opts.map((o,i) => `<div class="cell ans${i === q.correct ? '' : ' dim'}${q.opts.length === 3 && i === 2 ? ' wide' : ''}"><span class="row">${adot(i)}<span class="k">${L[i]}</span><span class="n" style="margin-left:auto">${counts[i]}</span></span><span class="t${o.length > 26 ? ' long' : ''}">${esc(o)}</span></div>`).join('')}</div>
+        <div class="grid${cols(q.opts)}">${q.opts.map((o,i) => `<div class="cell ans${i === q.correct ? '' : ' dim'}${q.opts.length === 3 && i === 2 ? ' wide' : ''}"><span class="row">${adot(i)}<span class="k">${L[i]}</span><span class="n" style="margin-left:auto">${counts[i]}</span></span><span class="t${o.length > 26 ? ' long' : ''}">${esc(o)}</span></div>`).join('')}</div>
         <div class="band" style="padding-block:10px"><span class="k">Topp 5</span></div>
         ${rows(ranks(5))}
         <div class="sp"></div>
@@ -670,7 +680,7 @@ function player(){
         });
       } else {
       app.innerHTML = `${head('fråga ' + pad(cur.qi+1) + '/' + pad(cur.n))}${qband}
-        <div class="grid fill" id="opts" style="flex:1">${cur.opts.map((o,i) => `<button class="cell ans${cur.opts.length === 3 && i === 2 ? ' wide' : ''}" data-c="${i}"><span class="row">${adot(i)}<span class="k">${L[i]}</span></span><span class="t${o.length > 26 ? ' long' : ''}">${esc(o)}</span></button>`).join('')}</div>`;
+        <div class="grid fill${cols(cur.opts)}" id="opts" style="flex:1">${cur.opts.map((o,i) => `<button class="cell ans${cur.opts.length === 3 && i === 2 ? ' wide' : ''}" data-c="${i}"><span class="row">${adot(i)}<span class="k">${L[i]}</span></span><span class="t${o.length > 26 ? ' long' : ''}">${esc(o)}</span></button>`).join('')}</div>`;
       document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => answer(Number(b.dataset.c)));
       }
       const bar = $('#bar'), open = Math.max(0, openAt - Date.now()), left = Math.max(0, endAt - Date.now() - open), tot = (cur.secs || 0) * 1000;
