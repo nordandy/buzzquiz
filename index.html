@@ -36,13 +36,13 @@ body{background:var(--bg);color:var(--ink);font:400 16px/1.4 var(--sans);padding
 .band .link{font:400 13px/1.4 var(--mono);color:var(--band-soft);word-break:break-all}
 .q{font-weight:500;font-size:clamp(24px,6.6vw,30px);line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
 .digits{font:400 clamp(60px,19vw,92px)/1 var(--mono);letter-spacing:.04em}
-.hero{background:var(--cell);flex:1 1 auto!important;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px var(--pad) 24px;position:relative}
+.hero{container-type:size;background:var(--cell);flex:1 1 auto!important;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px var(--pad) 24px;position:relative}
 .hero .k{position:absolute;top:16px;left:var(--pad)}
-.disc{--c:var(--sig);--p:1;width:min(64vw,34dvh,280px);aspect-ratio:1;border-radius:50%;position:relative;display:grid;place-items:center;flex:none;
+.disc{--c:var(--sig);--p:1;width:min(64vw,34dvh,280px,calc(100cqh - 64px));min-width:96px;aspect-ratio:1;border-radius:50%;position:relative;display:grid;place-items:center;flex:none;
   background:conic-gradient(var(--c) calc(var(--p)*1turn),transparent 0);box-shadow:inset 0 0 0 1px var(--line)}
 .disc::after{content:"";position:absolute;left:9%;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--ink)}
 .disc.ring{background:transparent;box-shadow:inset 0 0 0 2px var(--ink)}
-.disc b{font:400 clamp(44px,min(14vw,8dvh),68px)/1 var(--mono);color:var(--ink)}
+.disc b{font:400 clamp(30px,min(14vw,8dvh,22cqh),68px)/1 var(--mono);color:var(--ink)}
 .disc.light b{color:#fff}
 .disc.light::after{background:#fff}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
@@ -61,15 +61,16 @@ button.cell:disabled{color:var(--soft);cursor:default}
 .cell .v{font-size:21px;font-weight:500;line-height:1.15}
 .cell .num{font:400 34px/1 var(--mono)}
 .row{display:flex;align-items:center;gap:10px}
+.ans .k{font-size:14px}
 .ans .t{font-size:clamp(20px,5.6vw,24px);font-weight:500;line-height:1.15}
 .ans .n{font:400 24px/1 var(--mono)}
 .ans.dim{color:var(--soft)}.ans.dim .dot{opacity:.3}
-.dot{--c:var(--ink);display:inline-block;flex:none;width:24px;height:24px;border-radius:50%;background:var(--c);position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.22)}
-.dot::after{content:"";position:absolute;left:5px;top:50%;width:4px;height:4px;margin-top:-2px;border-radius:50%;background:rgba(255,255,255,.85)}
+.dot{--c:var(--ink);display:inline-block;flex:none;width:36px;height:36px;border-radius:50%;background:var(--c);position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.22)}
+.dot::after{content:"";position:absolute;left:7px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:rgba(255,255,255,.85)}
 .sp{flex:1 1 auto!important;background:var(--cell);min-height:0}
 .face{display:inline-block;flex:none;width:24px;height:24px;line-height:0}
 .face svg{width:100%;height:100%;display:block}
-.face.big{width:min(56px,8dvh);height:min(56px,8dvh)}.face.xl{width:min(64vw,34dvh,280px);height:auto;aspect-ratio:1}
+.face.big{width:min(56px,8dvh);height:min(56px,8dvh)}.face.xl{width:min(64vw,34dvh,280px,calc(100cqh - 64px));height:auto;aspect-ratio:1}
 .swatch{align-items:center;justify-content:center;min-height:0;padding:10px}
 button.cell[aria-pressed=true]{background:var(--press);box-shadow:inset 0 0 0 2px var(--ink)}
 .rows{display:flex;flex-direction:column;gap:1px;background:var(--line);flex:0 1 auto!important;min-height:0;overflow-y:auto}
@@ -85,6 +86,16 @@ input,textarea{font:inherit;width:100%;border:0;border-radius:0;color:inherit;ba
 textarea{background:var(--cell);font:400 15px/1.6 var(--mono);padding:14px var(--pad);min-height:120px;resize:none;flex:1 1 auto!important}
 input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--sig);outline-offset:-2px}
 .band input:focus{outline:0;border-bottom-color:var(--sig)}
+.clock{display:flex;align-items:center;gap:10px;flex:none}
+.clock .pie{--p:1;width:44px;height:44px;border-radius:50%;background:conic-gradient(var(--sig) calc(var(--p)*1turn),#2E2E2E 0)}
+.clock b{font:400 26px/1 var(--mono);min-width:2ch;text-align:right}
+.qrow{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.pop .disc{animation:pop .55s cubic-bezier(.2,1.6,.4,1) both}
+.pop{animation:flash .9s ease-out both}
+.shake .disc{animation:shake .45s ease-in-out both}
+@keyframes pop{from{transform:scale(.55)}to{transform:none}}
+@keyframes flash{from{background:#FBD3C2}to{background:var(--cell)}}
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-10px)}40%{transform:translateX(9px)}60%{transform:translateX(-6px)}80%{transform:translateX(3px)}}
 .bar{height:4px;background:#2E2E2E}
 .bar i{display:block;height:100%;background:var(--sig);transform-origin:left}
 .err{color:var(--sig);font:500 13px/1.35 var(--mono)}
@@ -104,7 +115,7 @@ input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px soli
   textarea{min-height:90px}
   .swatch{padding:6px}
 }
-@media (prefers-reduced-motion:reduce){.bar i{transition:none!important}.mark img{animation:none}}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none!important}.mark img,.pop,.pop .disc,.shake .disc{animation:none}}
 </style>
 </head>
 <body>
@@ -447,7 +458,7 @@ function player(){
     pick();
     const go = () => {
       const n = $('#n').value.trim(); if (!n) { $('#n').focus(); return; }
-      me.name = n.slice(0,20); ls.set('quiz-me', me); ls.set('quiz-room', code); join();
+      me.name = n.slice(0,20); ls.set('quiz-me', me); ls.set('quiz-room', code); unlock(); join();
     };
     $('#go').onclick = go; $('#n').onkeydown = e => { if (e.key === 'Enter') go(); };
   }
@@ -475,6 +486,7 @@ function player(){
     inn = sb.channel('q-' + code + '-in');
     sb.channel('q-' + code + '-out')
       .on('broadcast', { event:'state' }, ({payload}) => {
+        if (payload.ph === 'q') endAt = Date.now() + (payload.left || 0);
         cur = payload; render();
         // Nytt spel på samma kod (eller värden startade efter oss): anmäl dig igen
         if (cur.g && cur.g !== lastG) { lastG = cur.g; sendIn('join', { id:me.id, name:me.name, av:me.av }); }
@@ -487,7 +499,36 @@ function player(){
     render();
   }
 
+  // Nedräkning hos spelaren: sluttiden räknas från när frågan kom fram
+  let endAt = 0, clockT = null, fxDone = '';
+  function clock(){
+    clearInterval(clockT);
+    const step = () => {
+      const left = Math.max(0, endAt - Date.now()), el = $('#sec'), pie = $('#pie');
+      if (!el) return clearInterval(clockT);
+      el.textContent = Math.ceil(left / 1000);
+      if (pie) pie.style.setProperty('--p', cur.secs ? left / (cur.secs * 1000) : 0);
+    };
+    step(); clockT = setInterval(step, 250);
+  }
+  const clockHtml = () => `<span class="clock" aria-label="Sekunder kvar"><i class="pie" id="pie"></i><b id="sec"></b></span>`;
+
+  // Effekt när facit kommer: kort ton (följer ljudlös-knappen på iPhone), vibration där det finns, och en animation
+  let ac = null;
+  const unlock = () => { if (me.snd === false) return; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch(e){} };
+  function tone(f1, f2, t0, dur, type = 'sine'){
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(f1, ac.currentTime + t0); o.frequency.linearRampToValueAtTime(f2, ac.currentTime + t0 + dur);
+    g.gain.setValueAtTime(0, ac.currentTime + t0); g.gain.linearRampToValueAtTime(.07, ac.currentTime + t0 + .015); g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + t0 + dur);
+    o.connect(g).connect(ac.destination); o.start(ac.currentTime + t0); o.stop(ac.currentTime + t0 + dur + .05);
+  }
+  function fx(ok){
+    if (me.snd !== false && ac) try { ok ? (tone(660, 660, 0, .13), tone(990, 990, .11, .22)) : tone(240, 170, 0, .28, 'triangle'); } catch(e){}
+    try { navigator.vibrate && navigator.vibrate(ok ? [25, 50, 25] : 60); } catch(e){}
+  }
+
   function answer(c){
+    unlock();
     A = { g:cur.g, qi:cur.qi, c }; ls.set(ak, A);
     sendIn('answer', { id:me.id, qi:cur.qi, c });
     render();
@@ -498,19 +539,20 @@ function player(){
       app.innerHTML = `${head(roomLbl)}
         <div class="hero"><span class="k">Du</span>${face(me.av, 'xl')}</div>
         <div class="band"><span class="k">Inne</span><span class="q">${esc(me.name)}</span><p style="color:var(--band-soft)">Quizet startar snart.</p></div>
-        <div class="grid"><button class="cell wide slim" id="ch"><span class="k">Byt namn eller robot</span></button></div>`;
+        <div class="grid"><button class="cell slim" id="ch"><span class="k">Byt namn/robot</span></button><button class="cell slim" id="snd" aria-pressed="${me.snd !== false}"><span class="k">Ljud ${me.snd === false ? 'av' : 'på'}</span></button></div>`;
       $('#ch').onclick = form;
+      $('#snd').onclick = () => { me.snd = me.snd === false; ls.set('quiz-me', me); unlock(); render(); };
     }
     else if (cur.ph === 'q') {
       if (did()) {
         const c = A.c;
         app.innerHTML = `${head('fråga ' + pad(cur.qi+1) + '/' + pad(cur.n))}
           <div class="hero"><span class="k">Ditt svar</span><div class="disc ${c === 0 || c === 2 ? '' : 'light'}" style="--c:var(--o${'abcd'[c] || 'a'})"><b>${L[c] || ''}</b></div></div>
-          <div class="band"><span class="k">Skickat</span><span class="q">Väntar på rätt svar.</span></div>`;
-        return;
+          <div class="band"><div class="qrow"><div style="display:flex;flex-direction:column;gap:10px"><span class="k">Skickat</span><span class="q">Väntar på rätt svar.</span></div>${clockHtml()}</div></div>`;
+        return clock();
       }
       app.innerHTML = `${head('fråga ' + pad(cur.qi+1) + '/' + pad(cur.n))}
-        <div class="band"><span class="q">${esc(cur.q)}</span></div>
+        <div class="band"><div class="qrow"><span class="q">${esc(cur.q)}</span>${clockHtml()}</div></div>
         <div class="bar"><i id="bar"></i></div>
         <div class="grid fill" style="flex:1">${cur.opts.map((o,i) => `<button class="cell ans${cur.opts.length === 3 && i === 2 ? ' wide' : ''}" data-c="${i}"><span class="row">${adot(i)}<span class="k">${L[i]}</span></span><span class="t">${esc(o)}</span></button>`).join('')}</div>`;
       document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => answer(Number(b.dataset.c)));
@@ -519,19 +561,21 @@ function player(){
       bar.offsetWidth;
       bar.style.transition = 'transform ' + left + 'ms linear';
       bar.style.transform = 'scaleX(0)';
+      clock();
     }
     else if (cur.ph === 'r') {
       const r = cur.res && cur.res[me.id];
       if (!r) { app.innerHTML = `${head(roomLbl)}<div class="hero">${face(me.av, 'xl')}</div><div class="band"><span class="q">Du är med från nästa fråga.</span></div>`; return; }
       const ok = r[0] > 0;
       app.innerHTML = `${head('facit ' + pad(cur.qi+1) + '/' + pad(cur.n || 0))}
-        <div class="hero"><span class="k">${ok ? 'Poäng' : 'Missat'}</span><div class="disc ${ok ? '' : 'ring'}"><b>${ok ? '+' + r[0] : '0'}</b></div></div>
+        <div class="hero" id="hero"><span class="k">${ok ? 'Poäng' : 'Missat'}</span><div class="disc ${ok ? '' : 'ring'}"><b>${ok ? '+' + r[0] : '0'}</b></div></div>
         <div class="band"><span class="k">${ok ? 'Rätt' : (did() ? 'Fel' : 'Inget svar')}</span>
           <span class="row" style="gap:12px">${adot(cur.correct)}<span class="q">${esc(cur.ans)}</span></span></div>
         <div class="grid">
           <div class="cell"><span class="k">Totalt</span><span class="num">${r[1]}</span></div>
           <div class="cell"><span class="k">Plats</span><span class="num">${pad(r[2])}</span></div>
         </div>`;
+      if (fxDone !== cur.g + ':' + cur.qi) { fxDone = cur.g + ':' + cur.qi; $('#hero').classList.add(ok ? 'pop' : 'shake'); fx(ok); }
     }
     else if (cur.ph === 'end') {
       const r = cur.res && cur.res[me.id];
