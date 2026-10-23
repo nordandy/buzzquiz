@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root{--bg:#EEF0F2;--ink:#16243A;--soft:#5B6878;--card:#FFFFFF;--line:#D3D8DE;--a:#E5484D;--b:#2D6CDF;--c:#E9A92E;--d:#1F9D6B;color-scheme:light}
@@ -101,7 +101,7 @@ function host(){
   function msg(){
     const q = H.qs && H.qs[H.qi];
     if (H.phase === 'lobby') return { ph:'lobby' };
-    if (H.phase === 'question') return { ph:'q', qi:H.qi, n:H.qs.length, q:q.q, opts:q.opts, left:Math.max(0, H.qStart + H.secs*1000 - Date.now()) };
+    if (H.phase === 'question') return { ph:'q', qi:H.qi, n:H.qs.length, q:q.q, opts:q.opts, secs:H.secs, left:Math.max(0, H.qStart + H.secs*1000 - Date.now()) };
     if (H.phase === 'reveal') return { ph:'r', qi:H.qi, correct:q.correct, res:H.res };
     if (H.phase === 'end') return { ph:'end', res:H.res, n:ids().length };
     return { ph:'lobby' };
@@ -212,7 +212,7 @@ function host(){
           <div><p class="soft">Gå till länken eller skanna koden</p><div class="code">${H.code}</div><p style="word-break:break-all">${esc(link)}</p></div>
           <div id="qr"></div>
         </div>
-        <div class="row spread"><h1>${n} ${n === 1 ? 'spelare' : 'spelare'}</h1><button id="start" ${n ? '' : 'disabled'}>Starta quizet</button></div>
+        <div class="row spread"><h1>${n} spelare</h1><button id="start" ${n ? '' : 'disabled'}>Starta quizet</button></div>
         <div class="players">${ids().map(id => `<span class="chip">${H.players[id].av} ${esc(H.players[id].name)}</span>`).join('')}</div>
         <div><button class="ghost" id="x">Avsluta</button></div>`;
       try { new QRCode($('#qr'), { text:link, width:190, height:190 }); } catch(e){ $('#qr').remove(); }
@@ -260,7 +260,9 @@ function player(){
     name:'', av: AV[Math.floor(Math.random()*AV.length)]
   };
   ls.set('quiz-me', me);
-  let inn, cur = { ph:'lobby' }, answered = -1;
+  let inn, cur = { ph:'lobby' };
+  const ak = 'quiz-ans-' + code;
+  let answered = ls.get(ak) ?? -1;
 
   if (!code) return askCode();
   if (me.name && ls.get('quiz-room') === code) join(); else form();
@@ -295,7 +297,7 @@ function player(){
   async function sendIn(event, payload, retry = 1){
     try {
       if (inn.httpSend) await inn.httpSend(event, payload);
-      else await inn.send({ type:'broadcast', event, payload });
+      else if (await inn.send({ type:'broadcast', event, payload }) !== 'ok') throw new Error('send');
     } catch(e) { if (retry) setTimeout(() => sendIn(event, payload, 0), 800); }
   }
 
@@ -312,7 +314,7 @@ function player(){
   }
 
   function answer(c){
-    answered = cur.qi;
+    answered = cur.qi; ls.set(ak, answered);
     sendIn('answer', { id:me.id, qi:cur.qi, c });
     render();
   }
@@ -336,8 +338,8 @@ function player(){
         <div class="bar"><i id="bar"></i></div>
         <div class="opts">${cur.opts.map((o,i) => `<button class="opt o${i}" data-c="${i}"><span class="s">${SH[i]}</span>${esc(o)}</button>`).join('')}</div>`;
       document.querySelectorAll('.opt').forEach(b => b.onclick = () => answer(Number(b.dataset.c)));
-      const bar = $('#bar'), left = cur.left || 0;
-      bar.style.transform = 'scaleX(' + (left > 0 ? 1 : 0) + ')';
+      const bar = $('#bar'), left = cur.left || 0, tot = (cur.secs || 0) * 1000;
+      bar.style.transform = 'scaleX(' + (tot ? Math.min(1, left / tot) : (left > 0 ? 1 : 0)) + ')';
       bar.offsetWidth;
       bar.style.transition = 'transform ' + left + 'ms linear';
       bar.style.transform = 'scaleX(0)';
