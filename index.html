@@ -35,11 +35,14 @@ body{background:var(--bg);color:var(--ink);font:400 16px/1.4 var(--sans);padding
 .band p{font-size:17px;line-height:1.45}
 .band .ex{font-size:16px;line-height:1.45;color:#C9C9C4;max-width:60ch}
 .band .link{font:400 13px/1.4 var(--mono);color:var(--band-soft);word-break:break-all}
+.q.long{font-size:clamp(21px,5.6vw,25px)}
+.disc b.small{font-size:clamp(22px,min(8vw,14cqh),40px)}
 .q{font-weight:500;font-size:clamp(24px,6.6vw,30px);line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
 .digits{font:400 clamp(60px,19vw,92px)/1 var(--mono);letter-spacing:.04em}
-.hero{container-type:size;background:var(--cell);flex:1 1 auto!important;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px var(--pad) 24px;position:relative}
+.hero{container-type:size;background:var(--cell);flex:1 0 0!important;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:0 var(--pad);position:relative;overflow:hidden}
+@container (max-height:130px){.hero>*{display:none}}
 .hero .k{position:absolute;top:16px;left:var(--pad)}
-.disc{--c:var(--sig);--p:1;width:min(64vw,34dvh,280px,calc(100cqh - 64px));min-width:96px;aspect-ratio:1;border-radius:50%;position:relative;display:grid;place-items:center;flex:none;
+.disc{--c:var(--sig);--p:1;width:min(64vw,34dvh,280px,calc(100cqh - 72px));margin-top:16px;aspect-ratio:1;border-radius:50%;position:relative;display:grid;place-items:center;flex:none;
   background:conic-gradient(var(--c) calc(var(--p)*1turn),transparent 0);box-shadow:inset 0 0 0 1px var(--line)}
 .disc::after{content:"";position:absolute;left:9%;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--ink)}
 .disc.ring{background:transparent;box-shadow:inset 0 0 0 2px var(--ink)}
@@ -64,14 +67,17 @@ button.cell:disabled{color:var(--soft);cursor:default}
 .row{display:flex;align-items:center;gap:10px}
 .ans .k{font-size:14px}
 .ans .t{font-size:clamp(20px,5.6vw,24px);font-weight:500;line-height:1.15}
+.ans .t.long{font-size:clamp(17px,4.6vw,19px)}
+.tight .cell{min-height:0;gap:6px;padding:10px var(--pad)}
 .ans .n{font:400 24px/1 var(--mono)}
 .ans.dim{color:var(--soft)}.ans.dim .dot{opacity:.3}
 .dot{--c:var(--ink);display:inline-block;flex:none;width:36px;height:36px;border-radius:50%;background:var(--c);position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.22)}
 .dot::after{content:"";position:absolute;left:7px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:rgba(255,255,255,.85)}
+.act{position:sticky;bottom:0;z-index:2;box-shadow:0 -1px 0 var(--line),0 -8px 16px rgba(0,0,0,.06)}
 .sp{flex:1 1 auto!important;background:var(--cell);min-height:0}
 .face{display:inline-block;flex:none;width:24px;height:24px;line-height:0}
 .face svg{width:100%;height:100%;display:block}
-.face.big{width:min(56px,8dvh);height:min(56px,8dvh)}.face.xl{width:min(64vw,34dvh,280px,calc(100cqh - 64px));height:auto;aspect-ratio:1}
+.face.big{width:min(56px,8dvh);height:min(56px,8dvh)}.face.xl{width:min(64vw,34dvh,280px,calc(100cqh - 72px));margin-top:16px;height:auto;aspect-ratio:1}
 .swatch{align-items:center;justify-content:center;min-height:0;padding:10px}
 button.cell[aria-pressed=true]{background:var(--press);box-shadow:inset 0 0 0 2px var(--ink)}
 .rows{display:flex;flex-direction:column;gap:1px;background:var(--line);flex:0 1 auto!important;min-height:0;overflow-y:auto}
@@ -159,6 +165,8 @@ const head = (right = '') => `<header class="top"><span class="logo">${LOGO_LINE
 const mark = (cls = '') => `<div class="mark ${cls}"><img src="${LOGO_PNG}" alt="Dark Design Group" width="720" height="567"></div>`;
 const adot = (i, cls = '') => `<i class="dot ${cls}" style="--c:var(--o${'abcd'[i]})"></i>`;
 const pad = n => String(n).padStart(2, '0');
+const clockHtml = () => `<span class="clock" aria-label="Sekunder kvar"><i class="pie" id="pie"></i><b id="sec"></b></span>`;
+const fmt = n => n == null || n === '' ? '–' : Number(n).toLocaleString('sv-SE');
 const rows = list => `<div class="rows">${list.map(([av, name, score], i) => `<div><span class="i">${pad(i+1)}</span>${face(av, 'sm')}<span class="nm">${esc(name)}</span><span class="s">${score}</span></div>`).join('')}</div>`;
 const EXAMPLE = 'Vad heter Sveriges huvudstad?\n*Stockholm\nGöteborg\nMalmö\nUppsala\n\nHur många sidor har en oktagon?\n6\n*8\n10\n12';
 // Testquiz om Stockholm, laddas i testläge.
@@ -169,6 +177,9 @@ const TEST = [
   'I vilken sal i Stadshuset hålls Nobelbanketten?\n*Blå hallen\nGyllene salen\nRådssalen\nPrinsens galleri\n> Middagen äts i Blå hallen. Dansen efteråt är i Gyllene salen.',
   'Vem ritade Stockholms stadsbibliotek?\nRagnar Östberg\n*Gunnar Asplund\nSigurd Lewerentz\nSven Markelius\n> Asplunds bibliotek öppnade 1928. Ragnar Östberg ritade Stadshuset.'
 ].join('\n\n');
+// DDG-quizet. Öppnas med ?host=test (rum 0010) eller ?host=live (rum 2026).
+const DDG = "# Runde 1 · Svenske ord\n\nEn svensk kollega sier at hotellrommet er «mysigt». Hva mener hun?\nDet er lite\n*Det er koselig\nDet er gammeldags\nDet er rotete\n> «Mysigt» betyr koselig. Svenskene bruker det om alt fra hyggelige kafeer til stemningen en mørk novemberkveld.\n\nDu blir bedt om å ta med en «skottkärra» til byggeplassen. Hva henter du?\n*En trillebår\nEn spade\nEn stige\nEn verktøykasse\n> «Skottkärra» er svensk for trillebår. Nyttig på byggeplassen, særlig hvis arkitekten plutselig må gjøre noe praktisk.\n\nHotellet ber deg ta av «örngottet». Hva skal du ta av?\nDynetrekket\nSengeteppet\n*Putetrekket\nOvermadrassen\n> «Örngott» betyr putetrekk. Ordet kommer fra eldre svensk og har ingenting med ørner å gjøre.\n\nEn svensk kollega inviterer deg på «gökotta». Hva innebærer det?\nÅ ta en øl før frokost\nÅ spise en ekstra stor frokost\n*Å stå tidlig opp for å høre fuglesang\nÅ ta en lur etter lunsj\n> Man står opp svært tidlig om våren for å høre gjøken, tradisjonelt på Kristi himmelfartsdag. Frister nok mer før enn etter en kveld på Fotografiska.\n\n# Runde 2 · Sverige\n\nHva står bokstavene IKEA for?\n*Ingvar Kamprad, Elmtaryd, Agunnaryd\nIndustri, Kvalitet, Enkelhet, Arkitektur\nIngvar Kamprad, Eksport, Almhult\nInteriør, Kjøkken, Eiendom, Arkitektur\n> Kamprad vokste opp på gården Elmtaryd ved Agunnaryd i Småland. Han grunnla IKEA i 1943, bare 17 år gammel.\n\nHvorfor sier svenskene «fönster», mens nordmenn sier «vindu»?\nOrdet kommer fra latin via fransk\n*Ordet kom fra tysk, blant annet gjennom hansahandelen\nSvenskene fant opp et nytt ord på 1800-tallet\nDet er opprinnelig et finsk ord\n> «Fönster» kom fra tysk «Fenster» (opprinnelig latin) med middelalderens handel. Norsk beholdt «vindu», fra norrønt «vindauga»: vindøye.\n\nI 1967 måtte hele Sverige endre en vane over natten. Hva skjedde?\n*Sverige gikk over til høyrekjøring\nSverige innførte sommertid\nSverige forbød røyking på tog\nSverige innførte metersystemet\n> «Dagen H», 3. september 1967: klokken fem om morgenen gikk all trafikk over til høyre side. Norge kjørte allerede på høyre, så svenskene kom omsider på rett side.\n\nÉn gang i historien har Sverige hatt en dato som ikke finnes i kalenderen vår. Hvilken?\n31. april\n32. desember\n*30. februar\n31. november\n> Sverige prøvde å gå gradvis over til den gregorianske kalenderen, men ga opp og la til 30. februar 1712 for å rette opp. Fullt over gikk landet først i 1753.\n\n# Runde 3 · Stockholm\n\nFotografiska, hvor vi skal spise middag, hadde opprinnelig en ganske annen funksjon. Hva var bygningen?\nEt fengsel\nEt bryggeri\n*Et tollhus\nEt marinesykehus\n> Fotografiska holder til i Stora Tullhuset, tegnet av Ferdinand Boberg og ferdig i 1910 som del av byens toll- og havnevirksomhet.\n\nTengbom, som vi besøker på fredag, står bak en av Stockholms mest kjente bygninger. Hvilken?\nStockholms stadshus\n*Stockholms konserthus\nStockholms slott\nStockholms stadsbibliotek\n> Ivar Tengbom tegnet Konserthuset ved Hötorget, ferdig i 1926. Her deles de fleste Nobelprisene ut. Kontoret ble grunnlagt i 1906 og fyller 120 år i år.\n\nAcne Studios holder til i en brutalistisk bygning fra den kalde krigen. Hva var bygningen opprinnelig?\nDet svenske kommunistpartiets hovedkvarter\n*Den tsjekkoslovakiske ambassaden\nDen svenske etterretningstjenestens hovedkontor\nEn sovjetisk handelsskole\n> Floragatan 13 ble tegnet av Jan Bočan og Jan Šrámek og sto ferdig i 1972. Rå betong fra den kalde krigen, i dag Acne Studios' hovedkontor.\n\nStockholms stadshus har en berømt «Blå hallen», hvor Nobelbanketten arrangeres. Hva er det merkelige med salen?\n*Den har aldri vært blå\nDen ble opprinnelig bygget som svømmehall\nDen ligger egentlig under bakken\nDen har ingen rette vinkler\n> Ragnar Östberg ville male salen blå, men ombestemte seg da han så de røde teglveggene. Navnet satt allerede. En arkitekt som endret mening uten å endre prosjektnavnet.\n\n# Utslagsspørsmål · nærmest vinner\n\nHvor mange tokens brente Andreas på å bygge quizappen?\n= 423789\n> Alt for at dere skulle slippe å opprette en Kahoot-konto.";
+const PRESET = { test:'0010', live:'2026' };
 // Rumskoder: 0001–0099 är testrum, 0100–9999 riktiga spel.
 const isTest = code => Number(code) < 100;
 
@@ -198,10 +209,15 @@ Q.has('host') ? host() : player();
 function host(){
   let H = ls.get('quiz-host') || { phase:'setup', text:TEST, secs:20, mode:'test' };
   if (!H.mode) H.mode = 'test';
+  // ?host=test / ?host=live laddar DDG-quizet med sin rumskod
+  const pre = Q.get('host');
+  if (PRESET[pre] && H.phase === 'setup') Object.assign(H, { text:DDG, mode:pre, room:PRESET[pre], secs:30 });
   let out, inn, timer, rebT;
   const save = () => ls.set('quiz-host', H);
   const ids = () => Object.keys(H.players || {});
-  const ranked = () => ids().sort((a,b) => H.players[b].score - H.players[a].score);
+  // Lika poäng avgörs av utslagsfrågan (minst avvikelse vinner)
+  const tb = id => H.players[id].tb == null ? Infinity : H.players[id].tb;
+  const ranked = () => ids().sort((a,b) => H.players[b].score - H.players[a].score || tb(a) - tb(b));
   // Rumskoder i följd: 0001, 0002 … Värden kan skriva en egen.
   const nextRoom = mode => {
     const last = ls.get('quiz-last-' + mode) || 0;
@@ -221,8 +237,10 @@ function host(){
   function msg(){
     const q = H.qs && H.qs[H.qi];
     if (H.phase === 'lobby') return { ph:'lobby' };
-    if (H.phase === 'question') return { ph:'q', qi:H.qi, n:H.qs.length, q:q.q, opts:q.opts, secs:H.secs, left:Math.max(0, H.qStart + H.secs*1000 - Date.now()) };
-    if (H.phase === 'reveal') return { ph:'r', qi:H.qi, n:H.qs.length, correct:q.correct, ans:q.opts[q.correct], ex:q.ex || '', res:H.res };
+    if (H.phase === 'question') return { ph:'q', qi:H.qi, n:H.qs.length, q:q.q, opts:q.opts || [], num:q.num != null ? 1 : 0, round:q.round || '', secs:H.secs, left:Math.max(0, H.qStart + H.secs*1000 - Date.now()) };
+    if (H.phase === 'reveal') return q.num != null
+      ? { ph:'r', qi:H.qi, n:H.qs.length, num:1, ans:fmt(q.num), ex:q.ex || '', res:H.res }
+      : { ph:'r', qi:H.qi, n:H.qs.length, correct:q.correct, ans:q.opts[q.correct], ex:q.ex || '', res:H.res };
     if (H.phase === 'end') return { ph:'end', res:H.res, n:ids().length, top:ranked().slice(0,5).map(id => [H.players[id].av, H.players[id].name, H.players[id].score]) };
     return { ph:'lobby' };
   }
@@ -241,8 +259,8 @@ function host(){
 
   function onAnswer(p){
     if (!p || H.phase !== 'question' || p.qi !== H.qi || !H.players[p.id] || H.ans[p.id]) return;
-    const c = Number(p.c);
-    if (!(c >= 0 && c < H.qs[H.qi].opts.length)) return;
+    const c = Number(p.c), q = H.qs[H.qi];
+    if (q.num != null ? !(Number.isFinite(c) && c >= 0 && c < 1e12) : !(c >= 0 && c < q.opts.length && c % 1 === 0)) return;
     H.ans[p.id] = { c, ms: Date.now() - H.qStart };
     save();
     const n = Object.keys(H.ans).length;
@@ -250,18 +268,29 @@ function host(){
     if (n >= ids().length) reveal();
   }
 
+  // Format: # rubrik startar en runda. En fråga per stycke: frågan, 2–4 svar (rätt med *),
+  // eller "= tal" för en utslagsfråga. Rad som börjar med > är förklaringen.
   function parse(text){
     const qs = [], errs = [];
-    text.split(/\n\s*\n/).map(b => b.split('\n').map(l => l.trim()).filter(Boolean)).filter(b => b.length).forEach((b,i) => {
-      // Rader som börjar med > är förklaringen som visas med facit
-      const ex = b.slice(1).filter(o => o.startsWith('>')).map(o => o.replace(/^>\s*/, '')).join(' ').slice(0, 280);
+    let round = '';
+    text.split(/\n\s*\n/).map(b => b.split('\n').map(l => l.trim()).filter(Boolean)).filter(b => b.length).forEach(b => {
+      if (b[0].startsWith('#')) { round = b[0].replace(/^#+\s*/, '').slice(0, 40); return; }
+      const i = qs.length + errs.length;
+      const ex = b.slice(1).filter(o => o.startsWith('>')).map(o => o.replace(/^>\s*/, '')).join(' ').slice(0, 320);
       const lines = b.slice(1).filter(o => !o.startsWith('>'));
+      const numLine = lines.find(o => o.startsWith('='));
+      if (numLine) {
+        const num = Number(numLine.slice(1).replace(/[\s ]/g, '').replace(',', '.'));
+        if (!Number.isFinite(num)) errs.push('Fråga ' + (i+1) + ': skriv talet efter =.');
+        else qs.push({ q:b[0], num, ex, round });
+        return;
+      }
       const opts = lines.map(o => o.replace(/^\*\s*/, ''));
       const correct = lines.findIndex(o => o.startsWith('*'));
       const stars = lines.filter(o => o.startsWith('*')).length;
       if (opts.length < 2 || opts.length > 4) errs.push('Fråga ' + (i+1) + ' behöver 2–4 svar.');
       else if (stars !== 1) errs.push('Fråga ' + (i+1) + ' behöver exakt ett svar markerat med *.');
-      else qs.push({ q:b[0], opts, correct, ex });
+      else qs.push({ q:b[0], opts, correct, ex, round });
     });
     if (!qs.length && !errs.length) errs.push('Skriv minst en fråga.');
     return { qs, errs };
@@ -288,7 +317,9 @@ function host(){
     clearInterval(timer);
     timer = setInterval(() => {
       const left = H.qStart + H.secs*1000 - Date.now();
-      const el = $('#disc'); if (el) { el.style.setProperty('--p', Math.max(0, left/(H.secs*1000))); el.firstChild.textContent = pad(Math.max(0, Math.ceil(left/1000))); }
+      const f = Math.max(0, left/(H.secs*1000)), sec = Math.max(0, Math.ceil(left/1000));
+      const el = $('#disc'); if (el) { el.style.setProperty('--p', f); el.firstChild.textContent = pad(sec); }
+      const pie = $('#pie'); if (pie) { pie.style.setProperty('--p', f); $('#sec').textContent = sec; }
       if (left <= 0) reveal();
     }, 250);
   }
@@ -297,6 +328,15 @@ function host(){
     if (H.phase !== 'question') return;
     clearInterval(timer);
     const q = H.qs[H.qi], lim = H.secs*1000;
+    if (q.num != null) {
+      // Utslagsfråga: inga poäng, avvikelsen sparas och avgör vid lika poäng
+      ids().forEach(id => { const a = H.ans[id]; H.players[id].g = 0; H.players[id].tb = a ? Math.abs(a.c - q.num) : null; });
+      const close = ids().filter(id => H.ans[id]).sort((a,b) => tb(a) - tb(b) || H.ans[a].ms - H.ans[b].ms);
+      H.res = {};
+      ids().forEach(id => { const k = close.indexOf(id); H.res[id] = [0, H.players[id].score, k + 1, H.ans[id] ? H.ans[id].c : null, H.players[id].tb]; });
+      H.close = close.slice(0, 5);
+      H.phase = 'reveal'; save(); send(); render(); return;
+    }
     ids().forEach(id => {
       const a = H.ans[id];
       const g = a && a.c === q.correct ? Math.round(1000 - 500*Math.min(a.ms, lim)/lim) : 0;
@@ -324,7 +364,7 @@ function host(){
     const q = H.qs && H.qs[H.qi], ranks = n => ranked().slice(0,n).map(id => [H.players[id].av, H.players[id].name, H.players[id].score]);
     if (H.phase === 'setup') {
       app.innerHTML = `${head('värd')}${mark('opt')}
-        <div class="band"><span class="k">Nytt quiz</span><p>En fråga per stycke. Första raden är frågan, sedan 2–4 svar. Markera rätt svar med *. En rad som börjar med &gt; blir förklaring.</p></div>
+        <div class="band"><span class="k">Nytt quiz</span><p>En fråga per stycke: frågan, sedan 2–4 svar med * vid rätt. &gt; ger förklaring, = tal gör en utslagsfråga, # startar en runda.</p></div>
         <textarea id="t" spellcheck="false" aria-label="Frågor"></textarea>
         <div class="grid g3">
           <button class="cell" data-m="test" aria-pressed="${H.mode === 'test'}"><span class="k">01–99</span><span class="v">Test</span></button>
@@ -333,12 +373,12 @@ function host(){
           <label class="cell" style="grid-column:span 2"><span class="k">Rumskod</span><input id="rc" class="num" inputmode="numeric" maxlength="4" autocomplete="off" aria-label="Rumskod"><span class="err" id="e"></span></label>
           <button class="cell go" id="go"><span class="k">Klar</span><span class="v">Skapa rum →</span></button>
         </div>`;
-      $('#t').value = H.text; $('#rc').value = nextRoom(H.mode);
+      $('#t').value = H.text; $('#rc').value = H.room || nextRoom(H.mode);
       $('#t').oninput = e => { H.text = e.target.value; save(); };
       const SECS = [10, 15, 20, 30, 45, 60];
       $('#s').onclick = () => { H.secs = SECS[(SECS.indexOf(H.secs) + 1) % SECS.length] || 20; save(); render(); };
       document.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
-        H.mode = b.dataset.m;
+        H.mode = b.dataset.m; delete H.room;
         // Testläge laddar Stockholmsquizet om rutan är tom eller orörd
         if (H.mode === 'test' && [TEST, EXAMPLE, ''].includes(H.text.trim())) H.text = TEST;
         save(); render();
@@ -366,24 +406,40 @@ function host(){
       const left = Math.max(0, H.qStart + H.secs*1000 - Date.now());
       app.innerHTML = `${head('fråga ' + pad(H.qi+1) + '/' + pad(H.qs.length))}
         <div class="hero"><span class="k">Tid</span><div class="disc" id="disc" style="--p:${left/(H.secs*1000)}"><b>${pad(Math.ceil(left/1000))}</b></div></div>
-        <div class="band"><span class="q">${esc(q.q)}</span></div>
-        <div class="grid">${q.opts.map((o,i) => `<div class="cell ans${q.opts.length === 3 && i === 2 ? ' wide' : ''}"><span class="row">${adot(i)}<span class="k">${L[i]}</span></span><span class="t">${esc(o)}</span></div>`).join('')}</div>
-        <div class="grid">
+        <div class="band">${q.round ? `<span class="k">${esc(q.round)}</span>` : ''}<div class="qrow"><span class="q${q.q.length > 70 ? ' long' : ''}">${esc(q.q)}</span>${clockHtml()}</div></div>
+        ${q.num != null ? `<div class="grid"><div class="cell wide slim"><span class="k">Svaras med ett tal · närmast vinner</span></div></div>`
+          : `<div class="grid tight">${q.opts.map((o,i) => `<div class="cell ans${q.opts.length === 3 && i === 2 ? ' wide' : ''}"><span class="row">${adot(i)}<span class="k">${L[i]}</span></span><span class="t${o.length > 26 ? ' long' : ''}">${esc(o)}</span></div>`).join('')}</div>`}
+        <div class="grid act">
           <div class="cell"><span class="k">Svar</span><span class="num" id="cnt">${Object.keys(H.ans).length}/${ids().length}</span></div>
           <button class="cell go" id="rev"><span class="k">Stoppa</span><span class="v">Visa svar →</span></button>
         </div>`;
       $('#rev').onclick = reveal;
+      $('#sec').textContent = Math.ceil(left/1000); $('#pie').style.setProperty('--p', left/(H.secs*1000));
+    }
+    else if (H.phase === 'reveal' && q.num != null) {
+      const last = H.qi + 1 >= H.qs.length;
+      app.innerHTML = `${head('facit ' + pad(H.qi+1) + '/' + pad(H.qs.length))}
+        <div class="band"><span class="k">Rätt svar</span><span class="digits" style="font-size:clamp(40px,12vw,64px)">${fmt(q.num)}</span><span class="q long">${esc(q.q)}</span>${q.ex ? `<p class="ex">${esc(q.ex)}</p>` : ''}</div>
+        <div class="band" style="padding-block:10px"><span class="k">Närmast</span></div>
+        ${rows((H.close || []).map(id => [H.players[id].av, H.players[id].name, fmt(H.ans[id].c)]))}
+        <div class="sp"></div>
+        <div class="grid act">
+          <button class="cell" id="x"><span class="k">Avsluta</span></button>
+          <button class="cell go" id="nx"><span class="k">${last ? 'Sista' : 'Nästa'}</span><span class="v">${last ? 'Resultat →' : 'Nästa fråga →'}</span></button>
+        </div>`;
+      $('#nx').onclick = next;
+      $('#x').onclick = () => reset(true);
     }
     else if (H.phase === 'reveal') {
       const counts = q.opts.map((_,i) => Object.values(H.ans).filter(a => a.c === i).length);
       const last = H.qi + 1 >= H.qs.length;
       app.innerHTML = `${head('facit ' + pad(H.qi+1) + '/' + pad(H.qs.length))}
-        <div class="band"><span class="k">Rätt svar: ${L[q.correct]}</span><span class="q">${esc(q.q)}</span>${q.ex ? `<p class="ex">${esc(q.ex)}</p>` : ''}</div>
-        <div class="grid">${q.opts.map((o,i) => `<div class="cell ans${i === q.correct ? '' : ' dim'}${q.opts.length === 3 && i === 2 ? ' wide' : ''}"><span class="row">${adot(i)}<span class="k">${L[i]}</span><span class="n" style="margin-left:auto">${counts[i]}</span></span><span class="t">${esc(o)}</span></div>`).join('')}</div>
+        <div class="band"><span class="k">Rätt svar: ${L[q.correct]}</span><span class="q${q.q.length > 70 ? ' long' : ''}">${esc(q.q)}</span>${q.ex ? `<p class="ex">${esc(q.ex)}</p>` : ''}</div>
+        <div class="grid">${q.opts.map((o,i) => `<div class="cell ans${i === q.correct ? '' : ' dim'}${q.opts.length === 3 && i === 2 ? ' wide' : ''}"><span class="row">${adot(i)}<span class="k">${L[i]}</span><span class="n" style="margin-left:auto">${counts[i]}</span></span><span class="t${o.length > 26 ? ' long' : ''}">${esc(o)}</span></div>`).join('')}</div>
         <div class="band" style="padding-block:10px"><span class="k">Topp 5</span></div>
         ${rows(ranks(5))}
         <div class="sp"></div>
-        <div class="grid">
+        <div class="grid act">
           <button class="cell" id="x"><span class="k">Avsluta</span></button>
           <button class="cell go" id="nx"><span class="k">${last ? 'Sista' : 'Nästa'}</span><span class="v">${last ? 'Resultat →' : 'Nästa fråga →'}</span></button>
         </div>`;
@@ -395,7 +451,7 @@ function host(){
         <div class="band"><span class="k">Slutresultat · ${ids().length} spelare</span><span class="q">${H.players[ranked()[0]] ? esc(H.players[ranked()[0]].name) + ' vann.' : 'Klart.'}</span></div>
         ${rows(ranks(10))}
         <div class="sp"></div>
-        <div class="grid"><button class="cell go wide" id="new"><span class="k">Igen</span><span class="v">Nytt quiz →</span></button></div>`;
+        <div class="grid act"><button class="cell go wide" id="new"><span class="k">Igen</span><span class="v">Nytt quiz →</span></button></div>`;
       $('#new').onclick = () => reset(false);
     }
   }
@@ -447,7 +503,7 @@ function player(){
       <div class="band" style="padding-block:10px;background:var(--cell);color:var(--ink)"><span class="k" style="color:var(--soft)">Välj robot</span></div>
       <div class="grid g3" id="pick"></div>
       <div class="sp"></div>
-      <div class="grid"><button class="cell go wide" id="go"><span class="k">Klar</span><span class="v">Gå med →</span></button></div>`;
+      <div class="grid act"><button class="cell go wide" id="go"><span class="k">Klar</span><span class="v">Gå med →</span></button></div>`;
     $('#n').value = me.name;
     let opts = [me.av, ...eight().filter(a => a.split('.')[1] !== me.av.split('.')[1])];
     const pick = () => {
@@ -515,7 +571,6 @@ function player(){
     };
     step(); clockT = setInterval(step, 250);
   }
-  const clockHtml = () => `<span class="clock" aria-label="Sekunder kvar"><i class="pie" id="pie"></i><b id="sec"></b></span>`;
 
   // Effekt när facit kommer: kort ton (följer ljudlös-knappen på iPhone), vibration där det finns, och en animation
   let ac = null;
@@ -551,15 +606,30 @@ function player(){
       if (did()) {
         const c = A.c;
         app.innerHTML = `${head('fråga ' + pad(cur.qi+1) + '/' + pad(cur.n))}
-          <div class="hero"><span class="k">Ditt svar</span><div class="disc ${c === 0 || c === 2 ? '' : 'light'}" style="--c:var(--o${'abcd'[c] || 'a'})"><b>${L[c] || ''}</b></div></div>
+          <div class="hero"><span class="k">Ditt svar</span>${cur.num ? `<div class="disc ring"><b class="small">${fmt(c)}</b></div>` : `<div class="disc ${c === 0 || c === 2 ? '' : 'light'}" style="--c:var(--o${'abcd'[c] || 'a'})"><b>${L[c] || ''}</b></div>`}</div>
           <div class="band"><div class="qrow"><div style="display:flex;flex-direction:column;gap:10px"><span class="k">Skickat</span><span class="q">Väntar på rätt svar.</span></div>${clockHtml()}</div></div>`;
         return clock();
       }
-      app.innerHTML = `${head('fråga ' + pad(cur.qi+1) + '/' + pad(cur.n))}
-        <div class="band"><div class="qrow"><span class="q">${esc(cur.q)}</span>${clockHtml()}</div></div>
-        <div class="bar"><i id="bar"></i></div>
-        <div class="grid fill" style="flex:1">${cur.opts.map((o,i) => `<button class="cell ans${cur.opts.length === 3 && i === 2 ? ' wide' : ''}" data-c="${i}"><span class="row">${adot(i)}<span class="k">${L[i]}</span></span><span class="t">${esc(o)}</span></button>`).join('')}</div>`;
+      const qband = `<div class="band">${cur.round ? `<span class="k">${esc(cur.round)}</span>` : ''}<div class="qrow"><span class="q${cur.q.length > 70 ? ' long' : ''}">${esc(cur.q)}</span>${clockHtml()}</div></div>
+        <div class="bar"><i id="bar"></i></div>`;
+      if (cur.num) {
+        // Utslagsfråga: skriv ett tal på knappsatsen
+        let v = '';
+        app.innerHTML = `${head('fråga ' + pad(cur.qi+1) + '/' + pad(cur.n))}${qband}
+          <div class="cell slim" style="align-items:flex-end"><span class="num" id="nv" style="font-size:36px">–</span></div>
+          <div class="grid g3 fill">${[1,2,3,4,5,6,7,8,9,'⌫',0,'✓'].map(k => `<button class="cell${k === '✓' ? ' go' : ''}" data-k="${k}" style="align-items:center;justify-content:center"><span class="num">${k}</span></button>`).join('')}</div>`;
+        document.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
+          const k = b.dataset.k;
+          if (k === '⌫') v = v.slice(0, -1);
+          else if (k === '✓') { if (v) answer(Number(v)); return; }
+          else if (v.length < 10) v = (v + k).replace(/^0+(?=\d)/, '');
+          $('#nv').textContent = v ? fmt(v) : '–';
+        });
+      } else {
+      app.innerHTML = `${head('fråga ' + pad(cur.qi+1) + '/' + pad(cur.n))}${qband}
+        <div class="grid fill" style="flex:1">${cur.opts.map((o,i) => `<button class="cell ans${cur.opts.length === 3 && i === 2 ? ' wide' : ''}" data-c="${i}"><span class="row">${adot(i)}<span class="k">${L[i]}</span></span><span class="t${o.length > 26 ? ' long' : ''}">${esc(o)}</span></button>`).join('')}</div>`;
       document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => answer(Number(b.dataset.c)));
+      }
       const bar = $('#bar'), left = cur.left || 0, tot = (cur.secs || 0) * 1000;
       bar.style.transform = 'scaleX(' + (tot ? Math.min(1, left / tot) : (left > 0 ? 1 : 0)) + ')';
       bar.offsetWidth;
@@ -570,6 +640,18 @@ function player(){
     else if (cur.ph === 'r') {
       const r = cur.res && cur.res[me.id];
       if (!r) { app.innerHTML = `${head(roomLbl)}<div class="hero">${face(me.av, 'xl')}</div><div class="band"><span class="q">Du är med från nästa fråga.</span></div>`; return; }
+      if (cur.num) {
+        const top = r[2] > 0 && r[2] <= 3;
+        app.innerHTML = `${head('facit ' + pad(cur.qi+1) + '/' + pad(cur.n || 0))}
+          <div class="hero" id="hero"><span class="k">${r[2] ? 'Närmast, plats' : 'Inget svar'}</span><div class="disc ${top ? '' : 'ring'}"><b>${r[2] ? pad(r[2]) : '–'}</b></div></div>
+          <div class="band"><span class="k">Rätt svar</span><span class="q">${esc(cur.ans)}</span>${cur.ex ? `<p class="ex">${esc(cur.ex)}</p>` : ''}</div>
+          <div class="grid">
+            <div class="cell"><span class="k">Ditt svar</span><span class="num" style="font-size:26px">${fmt(r[3])}</span></div>
+            <div class="cell"><span class="k">Bom</span><span class="num" style="font-size:26px">${fmt(r[4])}</span></div>
+          </div>`;
+        if (fxDone !== cur.g + ':' + cur.qi) { fxDone = cur.g + ':' + cur.qi; if (top) { $('#hero').classList.add('pop'); fx(true); } }
+        return;
+      }
       const ok = r[0] > 0;
       app.innerHTML = `${head('facit ' + pad(cur.qi+1) + '/' + pad(cur.n || 0))}
         <div class="hero" id="hero"><span class="k">${ok ? 'Poäng' : 'Missat'}</span><div class="disc ${ok ? '' : 'ring'}"><b>${ok ? '+' + r[0] : '0'}</b></div></div>
